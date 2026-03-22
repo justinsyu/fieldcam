@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { UploadProvider } from '../src/context/UploadContext';
 import { colors } from '../src/theme';
 
 export {
@@ -45,7 +46,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <UploadProvider>
+        <RootLayoutNav />
+      </UploadProvider>
     </AuthProvider>
   );
 }

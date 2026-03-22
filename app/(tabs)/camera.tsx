@@ -9,10 +9,13 @@ import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 import { Button } from '../../src/components/ui';
 import { router } from 'expo-router';
+import { uploadQueue } from '../../src/services/uploadQueue';
+import { useUploads } from '../../src/context/UploadContext';
 
 export default function CameraScreen() {
   const { cameraRef, permission, requestPermission, facing, flash, toggleFacing, toggleFlash, takePicture } = useCamera();
   const [isCapturing, setIsCapturing] = useState(false);
+  const { refresh } = useUploads();
 
   const handleCapture = useCallback(async () => {
     setIsCapturing(true);
@@ -20,12 +23,21 @@ export default function CameraScreen() {
       const photo = await takePicture();
       if (photo) {
         console.log('Photo captured:', photo.uri);
-        // Will be wired to upload queue in Task 9
+        await uploadQueue.enqueue({
+          localUri: photo.uri,
+          fileName: `fieldcam_${Date.now()}.jpg`,
+          mimeType: 'image/jpeg',
+          fileSize: 0,
+          provider: 'google',
+          folderId: 'root',
+          folderName: 'Not set',
+        });
+        await refresh();
       }
     } finally {
       setIsCapturing(false);
     }
-  }, [takePicture]);
+  }, [takePicture, refresh]);
 
   if (!permission) return <View style={styles.container} />;
 
