@@ -11,24 +11,53 @@ interface CameraTopBarProps {
   flash: 'off' | 'on';
   onFlashToggle: () => void;
   onFolderPress?: () => void;
+  locationEnabled: boolean;
+  onLocationToggle: () => void;
 }
 
-export function CameraTopBar({ folderName, onSettingsPress, flash, onFlashToggle, onFolderPress }: CameraTopBarProps) {
+export function CameraTopBar({
+  folderName,
+  onSettingsPress,
+  flash,
+  onFlashToggle,
+  onFolderPress,
+  locationEnabled,
+  onLocationToggle,
+}: CameraTopBarProps) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.folderRow} onPress={onFolderPress} activeOpacity={onFolderPress ? 0.7 : 1}>
-        <Ionicons name="folder" size={18} color={colors.white} style={styles.folderIcon} />
+      <TouchableOpacity style={styles.folderPill} onPress={onFolderPress} activeOpacity={onFolderPress ? 0.7 : 1}>
+        <Ionicons name="folder" size={16} color={colors.white} style={styles.folderIcon} />
         <Text style={styles.folderText} numberOfLines={1}>{folderName}</Text>
       </TouchableOpacity>
       <View style={styles.actions}>
-        <TouchableOpacity onPress={onFlashToggle} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={onLocationToggle}
+          style={styles.iconButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name={locationEnabled ? 'location' : 'location-outline'}
+            size={24}
+            color={locationEnabled ? colors.orange : colors.white}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onFlashToggle}
+          style={styles.iconButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons
             name={flash === 'on' ? 'flash' : 'flash-off'}
             size={24}
             color={flash === 'on' ? colors.orange : colors.white}
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={onSettingsPress} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={onSettingsPress}
+          style={styles.iconButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons name="settings-outline" size={24} color={colors.white} />
         </TouchableOpacity>
       </View>
@@ -46,11 +75,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingTop: spacing.lg,
   },
-  folderRow: {
+  folderPill: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     marginRight: spacing.md,
+    borderColor: colors.borderLight,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignSelf: 'center',
   },
   folderIcon: {
     marginRight: spacing.xs,

@@ -9,20 +9,53 @@ interface CameraControlsProps {
   onFlipCamera: () => void;
   onQRScan: () => void;
   isCapturing: boolean;
+  annotationsEnabled: boolean;
+  onAnnotationToggle: () => void;
 }
 
-export function CameraControls({ onCapture, onFlipCamera, onQRScan, isCapturing }: CameraControlsProps) {
+export function CameraControls({
+  onCapture,
+  onFlipCamera,
+  onQRScan,
+  isCapturing,
+  annotationsEnabled,
+  onAnnotationToggle,
+}: CameraControlsProps) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onQRScan} style={styles.sideButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Ionicons name="qr-code-outline" size={32} color={colors.white} />
+      <TouchableOpacity
+        onPress={onAnnotationToggle}
+        style={styles.sideButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name="create-outline"
+          size={28}
+          color={annotationsEnabled ? colors.success : colors.white}
+        />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onCapture} style={[styles.shutter, isCapturing && styles.shutterCapturing]} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={onQRScan}
+        style={styles.sideButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons name="qr-code-outline" size={28} color={colors.white} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={onCapture}
+        style={[styles.shutter, isCapturing && styles.shutterCapturing]}
+        activeOpacity={0.8}
+      >
         <View style={styles.shutterInner} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onFlipCamera} style={styles.sideButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+      <TouchableOpacity
+        onPress={onFlipCamera}
+        style={styles.sideButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
         <Ionicons name="camera-reverse-outline" size={32} color={colors.white} />
       </TouchableOpacity>
     </View>

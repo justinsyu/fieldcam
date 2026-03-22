@@ -24,6 +24,13 @@ export default function CameraScreen() {
   const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
   const { settings, updateSetting } = useSettings();
 
+  const [locationEnabled, setLocationEnabled] = useState<boolean>(
+    () => settings?.annotationLocation ?? true
+  );
+  const [annotationsEnabled, setAnnotationsEnabled] = useState<boolean>(
+    () => (settings?.annotationLocation ?? true) || (settings?.annotationTimestamp ?? true)
+  );
+
   useFocusEffect(
     useCallback(() => {
       folderService.getCurrentFolder().then(setCurrentFolder);
@@ -54,6 +61,21 @@ export default function CameraScreen() {
     }
   }, [takePicture, refresh, currentFolder]);
 
+  const handleLocationToggle = useCallback(() => {
+    setLocationEnabled(prev => !prev);
+  }, []);
+
+  const handleAnnotationToggle = useCallback(() => {
+    setAnnotationsEnabled(prev => !prev);
+  }, []);
+
+  const annotationBannerParts: string[] = [];
+  if (annotationsEnabled) {
+    if (locationEnabled) annotationBannerParts.push('GPS');
+    if (settings?.annotationTimestamp) annotationBannerParts.push('Timestamp');
+    if (settings?.annotationCustomText) annotationBannerParts.push('Note');
+  }
+
   if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
@@ -74,7 +96,18 @@ export default function CameraScreen() {
           flash={flash}
           onFlashToggle={toggleFlash}
           onFolderPress={() => router.push('/folder-picker')}
+          locationEnabled={locationEnabled}
+          onLocationToggle={handleLocationToggle}
         />
+
+        {annotationsEnabled && annotationBannerParts.length > 0 && (
+          <View style={styles.annotationBanner}>
+            <Text style={styles.annotationBannerText}>
+              {annotationBannerParts.join(' | ')}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.spacer} />
         {settings?.cameraGrid && (
           <View style={styles.gridOverlay} pointerEvents="none">
@@ -89,6 +122,8 @@ export default function CameraScreen() {
           onFlipCamera={toggleFacing}
           onQRScan={() => router.push('/qr-scanner')}
           isCapturing={isCapturing}
+          annotationsEnabled={annotationsEnabled}
+          onAnnotationToggle={handleAnnotationToggle}
         />
       </CameraView>
 
@@ -115,6 +150,20 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  annotationBanner: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    marginTop: spacing.xs,
+  },
+  annotationBannerText: {
+    ...typography.label,
+    color: colors.success,
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
