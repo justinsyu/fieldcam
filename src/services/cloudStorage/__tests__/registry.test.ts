@@ -24,8 +24,10 @@ describe('getProvider', () => {
     expect(provider.listFolders).toBeDefined();
   });
 
-  it('throws for unregistered dropbox', () => {
-    expect(() => getProvider('dropbox')).toThrow('not registered');
+  it('returns dropbox provider', () => {
+    const provider = getProvider('dropbox');
+    expect(provider).toBeDefined();
+    expect(provider.listFolders).toBeDefined();
   });
 
   it('throws for unknown provider', () => {

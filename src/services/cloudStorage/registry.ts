@@ -2,10 +2,12 @@ import type { CloudProvider } from '../../types/auth';
 import type { CloudStorageProvider } from './types';
 import { googleDrive } from './googleDrive';
 import { oneDrive } from './oneDrive';
+import { dropbox } from './dropbox';
 
 const providers: Record<string, CloudStorageProvider> = {
   google: googleDrive,
   microsoft: oneDrive,
+  dropbox: dropbox,
 };
 
 export function getProvider(provider: CloudProvider): CloudStorageProvider {
