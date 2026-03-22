@@ -39,15 +39,46 @@ FieldCam App (React Native / Expo)
   |                              Delivery: Same Folder / Other Folder / Email
 ```
 
-**Key principle:** The backend never stores user data. It receives an image, processes it, delivers the result, done.
+**Key principle:** The processing API is stateless for image data (never stores photos). A lightweight database (e.g., Firestore or DynamoDB) stores user accounts, team configs, processing profiles, and usage quotas.
 
 ### Data Flow
 
 1. User takes a photo in the app
 2. Photo uploads directly to the user's chosen cloud storage folder
-3. If AI processing is enabled, the app also sends the image to FieldCam's stateless API
-4. The API performs OCR, applies the user's configured prompt (summarize, extract data, etc.)
-5. Results are delivered to the user's chosen destination (same cloud folder as a text/PDF file, a different folder, or via email)
+3. If AI processing is enabled, the app sends the image to FieldCam's processing API along with the user's OAuth token and processing profile config
+4. The API performs OCR (Google Cloud Vision), applies the user's prompt template via LLM (Claude API), and generates output
+5. The API uses the forwarded OAuth token to upload results to the user's cloud storage, or sends via email (SendGrid)
+6. The app receives a completion callback and updates the upload queue status
+
+### Processing API
+
+**Base URL:** `https://api.fieldcam.app/v1`
+
+**Authentication:** The app sends a FieldCam JWT (issued at OAuth login) in the `Authorization` header. The user's cloud OAuth token is sent in `X-Cloud-Token` for cloud storage write-back.
+
+**Endpoints:**
+
+- `POST /process` - Submit an image for processing
+  - Body: `{ image: <base64 or multipart>, profile: { prompt, delivery }, cloudToken: <oauth token>, destination: { provider, folderId, email? } }`
+  - Response: `{ jobId, status: "queued" }`
+  - Max image size: 20MB
+
+- `GET /process/:jobId` - Check processing status
+  - Response: `{ jobId, status: "queued|processing|completed|failed", result?: { text, deliveredTo } }`
+
+- `GET /profiles` - List team/default profiles
+- `POST /profiles` - Create a profile (admin only for team profiles)
+- `PUT /profiles/:id` - Update a profile
+- `DELETE /profiles/:id` - Delete a profile
+
+**Rate limiting:** 100 requests/hour per user (free tier), configurable per plan.
+
+### AI/OCR Providers
+
+- **OCR:** Google Cloud Vision API (high accuracy on printed text, good with posters/slides)
+- **LLM:** Claude API (Anthropic) for prompt processing
+- **Email:** SendGrid for result delivery via email
+- **Fallback:** If Vision API is unavailable, fall back to Tesseract OCR (lower quality but functional)
 
 ## Screens & Navigation
 
@@ -60,7 +91,6 @@ The main screen users see after login. Based on UploadCam's camera view but with
 **Elements:**
 - Live camera viewfinder (full screen behind UI)
 - Top bar: current folder name with cloud provider icon, location pin (GPS tagging), overflow menu (gear icon)
-- Mode toggle: PICTURE / VIDEO
 - Bottom controls: annotation toggle button, shutter button (large, center), camera flip button
 - Resolution indicator
 - Flash toggle
@@ -70,7 +100,6 @@ The main screen users see after login. Based on UploadCam's camera view but with
 **Behavior:**
 - Tapping shutter captures and queues for upload
 - Long-press shutter for burst mode (stretch goal)
-- Swipe between PICTURE and VIDEO modes
 
 ### 2. Folder Picker Screen
 
@@ -84,12 +113,9 @@ Lets users browse and select upload destination folders in their connected cloud
 - Team Folders section (admin-assigned folders)
 - Recents section (recently used folders)
 - "Take Photos Here" floating action button (sets folder and returns to camera)
-- Nearby Folders section (GPS-based auto-folder selection)
-
 **Behavior:**
 - Tapping a folder shows its contents or selects it
 - Long-press shows context menu (remove from recents, add to favorites)
-- Nearby Folders uses geofencing to auto-select folders based on GPS location
 
 ### 3. Upload Queue Screen
 
@@ -167,10 +193,6 @@ Scrollable settings list with sections. Based on UploadCam's settings but adapte
 - Timestamp annotation
 - Custom text annotation
 
-**Location**
-- Nearby folders (toggle)
-- Manage nearby folders (geofence setup)
-
 **AI Processing**
 - Default processing profile
 - Auto-process all photos (toggle)
@@ -223,10 +245,20 @@ Camera viewfinder with QR scanning overlay.
 
 - Login via OAuth with Google, Microsoft, or Dropbox
 - The cloud account IS the FieldCam identity (no separate registration)
-- OAuth tokens stored securely in device keychain
-- Token refresh handled automatically
+- On first login, a FieldCam user record is created server-side (stores user ID, email, team membership, usage quota)
+- A FieldCam JWT is issued for API calls; cloud OAuth tokens are stored in device keychain and forwarded per-request
+- Token refresh handled automatically by the app
 - Multiple cloud accounts can be connected simultaneously
-- Team/admin features use the same auth with role-based permissions
+- OAuth scopes requested: cloud storage read/write, user email/profile
+
+### Team / Admin Model
+
+- Teams are created by an admin user via the app (Settings > Team > Create Team)
+- Admin generates an invite code or link; users join by entering the code
+- Team data (members, roles, shared profiles, default folders) stored in FieldCam's database
+- Roles: Owner (1 per team), Admin (can manage profiles/members), Member (uses team defaults)
+- Admin-locked profiles: members see them and can use them but cannot edit the prompt or delivery settings
+- Members can create personal profiles alongside team profiles
 
 ## AI Processing Pipeline
 
@@ -289,18 +321,47 @@ Please provide:
 ## Permissions Required
 
 - Camera (required)
-- Microphone (for video capture)
-- Fine Location (for GPS annotations and nearby folders)
+- Fine Location (for GPS annotations)
 - Coarse Location (fallback)
 - Notifications (upload status, processing complete)
 - Internet (upload and processing)
 - Background execution (background uploads)
 
+## Error Handling
+
+- **OAuth token expired:** App automatically attempts token refresh. If refresh fails, user is prompted to re-authenticate.
+- **Cloud storage full:** Upload fails with clear error message. Photo remains in local queue.
+- **AI processing failure:** Job marked as "failed" with error reason. User can retry from Upload Queue. Original photo is already safely in cloud storage.
+- **Processing API down:** Processing requests queue locally. App periodically retries. Photos still upload to cloud storage normally.
+- **Network loss during upload:** Partial uploads are discarded and retried from scratch. Upload queue persists across app restarts.
+- **Malformed QR code:** Validation rejects unrecognized formats. Only FieldCam-formatted QR codes (JSON with a `fieldcam` schema key) are accepted.
+
+## QR Code Format
+
+QR codes encode JSON with a `fieldcam` schema identifier:
+```json
+{
+  "fieldcam": "1.0",
+  "folder": { "provider": "gdrive", "id": "folder_id", "name": "Conference 2026" },
+  "profile": "poster-summary"
+}
+```
+QR codes can be generated by admins from the Team settings or from a future web dashboard.
+
+## Local Data Storage
+
+- **Upload queue:** SQLite via `expo-sqlite` (persists across restarts)
+- **Processing profiles:** SQLite (synced from server for team profiles, local-only for personal)
+- **Settings/preferences:** AsyncStorage (key-value)
+- **Cached images:** File system cache, clearable from Settings
+- **OAuth tokens:** Expo SecureStore (device keychain)
+
 ## Out of Scope (v1)
 
-- Video AI processing (photos only for v1)
+- Video capture and upload (PICTURE mode only for v1, no VIDEO toggle)
 - Real-time collaboration features
 - In-app photo editing
-- Monetization/billing implementation (placeholder UI only)
+- Monetization/billing implementation (placeholder UI only, free tier with 100 processing requests/day)
 - Admin web dashboard (admin features are in-app only for v1)
 - Batch processing of existing photo libraries
+- Nearby Folders geofencing (deferred; GPS is unreliable indoors at conference centers)
