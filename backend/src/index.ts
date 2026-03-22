@@ -3,14 +3,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { processRouter } from './routes/process';
 import { profilesRouter } from './routes/profiles';
+import { firebaseAuth } from './middleware/auth';
 
 const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(express.json({ limit: '25mb' }));
 
-app.use('/v1/process', processRouter);
-app.use('/v1/profiles', profilesRouter);
+app.use('/v1/process', firebaseAuth, processRouter);
+app.use('/v1/profiles', firebaseAuth, profilesRouter);
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 
