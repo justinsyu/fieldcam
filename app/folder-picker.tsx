@@ -13,8 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer, SectionHeader, Card, Button } from '../src/components/ui';
 import { FolderListItem } from '../src/components/folders/FolderListItem';
 import { folderService, type FolderInfo } from '../src/services/folderService';
-import { googleDrive } from '../src/services/cloudStorage/googleDrive';
-import { secureStorage } from '../src/services/secureStorage';
+import { getProvider } from '../src/services/cloudStorage/registry';
+import { getValidAccessToken } from '../src/services/oauth/tokenRefresh';
+import { useAuth } from '../src/context/AuthContext';
+import type { CloudProvider } from '../src/types/auth';
 import { colors } from '../src/theme/colors';
 import { typography } from '../src/theme/typography';
 import { spacing } from '../src/theme/spacing';
@@ -28,13 +30,22 @@ interface BrowserState {
 }
 
 export default function FolderPickerScreen() {
+  const { linkedAccounts } = useAuth();
+  const [selectedProvider, setSelectedProvider] = useState<CloudProvider>(
+    (linkedAccounts[0]?.provider as CloudProvider) ?? 'google'
+  );
+
+  const rootId = selectedProvider === 'dropbox' ? '' : 'root';
+  const rootName = selectedProvider === 'google' ? 'My Drive'
+    : selectedProvider === 'microsoft' ? 'OneDrive' : 'Dropbox';
+
   const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
   const [favorites, setFavorites] = useState<FolderInfo[]>([]);
   const [recents, setRecents] = useState<FolderInfo[]>([]);
   const [browserVisible, setBrowserVisible] = useState(false);
   const [browser, setBrowser] = useState<BrowserState>({
-    folderId: 'root',
-    folderName: 'My Drive',
+    folderId: rootId,
+    folderName: rootName,
     folders: [],
     loading: false,
     stack: [],
@@ -58,17 +69,18 @@ export default function FolderPickerScreen() {
   const loadFolders = useCallback(async (parentId: string) => {
     setBrowser((prev) => ({ ...prev, loading: true, folders: [] }));
     try {
-      const token = await secureStorage.getToken('google');
+      const token = await getValidAccessToken(selectedProvider);
       if (!token) {
-        Alert.alert('Not signed in', 'Please sign in with Google to browse folders.');
+        Alert.alert('Not signed in', 'Please connect a cloud storage account to browse folders.');
         setBrowserVisible(false);
         return;
       }
-      const cloudFolders = await googleDrive.listFolders(parentId, token);
+      const provider = getProvider(selectedProvider);
+      const cloudFolders = await provider.listFolders(parentId, token);
       const folderInfos: FolderInfo[] = cloudFolders.map((f) => ({
         id: f.id,
         name: f.name,
-        provider: 'google',
+        provider: selectedProvider,
       }));
       // Sort alphabetically
       folderInfos.sort((a, b) => a.name.localeCompare(b.name));
@@ -78,13 +90,13 @@ export default function FolderPickerScreen() {
       Alert.alert('Error', msg);
       setBrowser((prev) => ({ ...prev, loading: false }));
     }
-  }, []);
+  }, [selectedProvider]);
 
   const openBrowser = useCallback(() => {
     setBrowserVisible(true);
-    setBrowser({ folderId: 'root', folderName: 'My Drive', folders: [], loading: false, stack: [] });
-    loadFolders('root');
-  }, [loadFolders]);
+    setBrowser({ folderId: rootId, folderName: rootName, folders: [], loading: false, stack: [] });
+    loadFolders(rootId);
+  }, [loadFolders, rootId, rootName]);
 
   const drillInto = useCallback(
     (folder: FolderInfo) => {
@@ -125,11 +137,11 @@ export default function FolderPickerScreen() {
     const selected: FolderInfo = {
       id: browser.folderId,
       name: browser.folderName,
-      provider: 'google',
+      provider: selectedProvider,
     };
     await folderService.setCurrentFolder(selected);
     router.back();
-  }, [browser.folderId, browser.folderName]);
+  }, [browser.folderId, browser.folderName, selectedProvider]);
 
   const selectAndGoBack = useCallback(async (folder: FolderInfo) => {
     await folderService.setCurrentFolder(folder);
@@ -141,7 +153,7 @@ export default function FolderPickerScreen() {
     const folder: FolderInfo = {
       id: browser.folderId,
       name: browser.folderName,
-      provider: 'google',
+      provider: selectedProvider,
     };
     const isFav = favorites.some((f) => f.id === folder.id && f.provider === folder.provider);
     if (isFav) {
@@ -150,17 +162,19 @@ export default function FolderPickerScreen() {
       await folderService.addFavorite(folder);
     }
     await loadData();
-  }, [browser.folderId, browser.folderName, favorites, loadData]);
+  }, [browser.folderId, browser.folderName, selectedProvider, favorites, loadData]);
 
   const isBrowserFolderFavorited = favorites.some(
-    (f) => f.id === browser.folderId && f.provider === 'google'
+    (f) => f.id === browser.folderId && f.provider === selectedProvider
   );
 
   // Create new subfolder in current browser location
   const createSubfolder = useCallback(async () => {
-    const token = await secureStorage.getToken('google');
-    if (!token) {
-      Alert.alert('Not signed in', 'Please sign in with Google first.');
+    let token: string;
+    try {
+      token = await getValidAccessToken(selectedProvider);
+    } catch {
+      Alert.alert('Not signed in', 'Please connect a cloud storage account first.');
       return;
     }
     Alert.prompt(
@@ -169,7 +183,8 @@ export default function FolderPickerScreen() {
       async (name) => {
         if (!name || !name.trim()) return;
         try {
-          await googleDrive.createFolder(name.trim(), browser.folderId, token);
+          const provider = getProvider(selectedProvider);
+          await provider.createFolder(name.trim(), browser.folderId, token);
           // Reload current folder contents
           loadFolders(browser.folderId);
         } catch (e) {
@@ -179,7 +194,7 @@ export default function FolderPickerScreen() {
       },
       'plain-text'
     );
-  }, [browser.folderId, loadFolders]);
+  }, [browser.folderId, loadFolders, selectedProvider]);
 
   const removeFromRecents = useCallback(
     async (folder: FolderInfo) => {
@@ -212,7 +227,7 @@ export default function FolderPickerScreen() {
 
         <View style={styles.browserHeaderActions}>
           {/* Star/favorite button (only meaningful when not at root) */}
-          {browser.folderId !== 'root' && (
+          {browser.folderId !== rootId && (
             <TouchableOpacity
               onPress={toggleFavoriteForBrowser}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -299,6 +314,30 @@ export default function FolderPickerScreen() {
       {!browserVisible && (
         <View style={styles.chooseFolderContainer}>
           <Button label="Choose a Folder" onPress={openBrowser} />
+        </View>
+      )}
+
+      {linkedAccounts.length > 0 && (
+        <View style={styles.providerSelector}>
+          {linkedAccounts.map((account) => {
+            const label = account.provider === 'google' ? 'Google Drive'
+              : account.provider === 'microsoft' ? 'OneDrive' : 'Dropbox';
+            const isSelected = account.provider === selectedProvider;
+            return (
+              <TouchableOpacity
+                key={account.provider}
+                style={[styles.providerPill, isSelected && styles.providerPillSelected]}
+                onPress={() => {
+                  setSelectedProvider(account.provider);
+                  setBrowserVisible(false);
+                }}
+              >
+                <Text style={[styles.providerPillText, isSelected && styles.providerPillTextSelected]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
 
@@ -399,6 +438,31 @@ const styles = StyleSheet.create({
   chooseFolderContainer: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
+  },
+  providerSelector: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  providerPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  providerPillSelected: {
+    backgroundColor: colors.orange,
+    borderColor: colors.orange,
+  },
+  providerPillText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  providerPillTextSelected: {
+    color: colors.white,
   },
   browserSection: {
     marginHorizontal: spacing.md,
