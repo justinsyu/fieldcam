@@ -70,7 +70,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen
           name="profile-editor"
@@ -93,6 +93,14 @@ function RootLayoutNav() {
           name="qr-scanner"
           options={{
             title: 'Scan QR Code',
+            headerStyle: { backgroundColor: colors.bgPrimary },
+            headerTintColor: colors.white,
+          }}
+        />
+        <Stack.Screen
+          name="upload-history"
+          options={{
+            title: 'Upload History',
             headerStyle: { backgroundColor: colors.bgPrimary },
             headerTintColor: colors.white,
           }}
