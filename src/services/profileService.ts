@@ -139,40 +139,43 @@ export const profileService = {
   },
 
   async seedDefaults(): Promise<void> {
+    // Use fixed UUIDs and INSERT OR IGNORE so re-entrant or concurrent calls
+    // are safe; duplicates are never written regardless of timing.
     const db = await getDatabase();
-    const row = await db.getFirstAsync<{ count: number }>(
-      `SELECT COUNT(*) as count FROM processing_profiles`
-    );
-    if (row && row.count > 0) return;
+    const now = new Date().toISOString();
 
-    await profileService.create({
-      name: 'Poster Summary',
-      description: 'Extracts key findings from research posters',
-      promptTemplate: 'Extract the key findings, methodology, and conclusions from this research poster. Format as a structured summary with sections for: Title, Objective, Methods, Results, and Conclusions.\n\nText: {{extracted_text}}',
-      deliveryType: 'same_folder',
-      isActive: true,
-      isTeam: false,
-      isLocked: false,
-    });
+    const defaults: Array<{ id: string; name: string; description: string; prompt: string }> = [
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'Poster Summary',
+        description: 'Extracts key findings from research posters',
+        prompt:
+          'Extract the key findings, methodology, and conclusions from this research poster. Format as a structured summary with sections for: Title, Objective, Methods, Results, and Conclusions.\n\nText: {{extracted_text}}',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000002',
+        name: 'Slide Notes',
+        description: 'Converts slides to structured notes',
+        prompt:
+          'Convert the content from these slides into structured notes. Include main points, sub-points, and any key data or statistics mentioned.\n\nSlide content: {{extracted_text}}\nTimestamp: {{timestamp}}',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000003',
+        name: 'Business Card',
+        description: 'Extracts contact info from business cards',
+        prompt:
+          'Extract all contact information from this business card and return it as structured JSON with fields: name, title, company, email, phone, website, address.\n\nCard text: {{extracted_text}}\nFolder: {{folder_name}}',
+      },
+    ];
 
-    await profileService.create({
-      name: 'Slide Notes',
-      description: 'Converts slides to structured notes',
-      promptTemplate: 'Convert the content from these slides into structured notes. Include main points, sub-points, and any key data or statistics mentioned.\n\nSlide content: {{extracted_text}}\nTimestamp: {{timestamp}}',
-      deliveryType: 'same_folder',
-      isActive: true,
-      isTeam: false,
-      isLocked: false,
-    });
-
-    await profileService.create({
-      name: 'Business Card',
-      description: 'Extracts contact info from business cards',
-      promptTemplate: 'Extract all contact information from this business card and return it as structured JSON with fields: name, title, company, email, phone, website, address.\n\nCard text: {{extracted_text}}\nFolder: {{folder_name}}',
-      deliveryType: 'same_folder',
-      isActive: true,
-      isTeam: false,
-      isLocked: false,
-    });
+    for (const d of defaults) {
+      await db.runAsync(
+        `INSERT OR IGNORE INTO processing_profiles
+          (id, name, description, prompt_template, delivery_type, delivery_destination,
+           is_active, is_team, is_locked, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'same_folder', NULL, 1, 0, 0, ?, ?)`,
+        [d.id, d.name, d.description, d.prompt, now, now]
+      );
+    }
   },
 };

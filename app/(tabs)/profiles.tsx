@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,6 @@ export default function ProfilesScreen() {
 
   const loadProfiles = useCallback(async () => {
     try {
-      await profileService.seedDefaults();
       const data = await profileService.getAll();
       setProfiles(data);
     } catch (e) {
@@ -26,10 +25,6 @@ export default function ProfilesScreen() {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
 
   useFocusEffect(
     useCallback(() => {
