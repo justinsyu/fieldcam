@@ -12,6 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { uploadQueue } from '../../src/services/uploadQueue';
 import { useUploads } from '../../src/context/UploadContext';
 import { folderService, type FolderInfo } from '../../src/services/folderService';
+import { getAnnotationText } from '../../src/services/annotationService';
 
 export default function CameraScreen() {
   const { cameraRef, permission, requestPermission, facing, flash, toggleFacing, toggleFlash, takePicture } = useCamera();
@@ -31,6 +32,7 @@ export default function CameraScreen() {
       const photo = await takePicture();
       if (photo) {
         console.log('Photo captured:', photo.uri);
+        const annotations = await getAnnotationText();
         await uploadQueue.enqueue({
           localUri: photo.uri,
           fileName: `fieldcam_${Date.now()}.jpg`,
@@ -39,6 +41,7 @@ export default function CameraScreen() {
           provider: (currentFolder?.provider ?? 'google') as import('../../src/types/auth').CloudProvider,
           folderId: currentFolder?.id ?? 'root',
           folderName: currentFolder?.name ?? 'Not set',
+          annotations: annotations || undefined,
         });
         await refresh();
       }

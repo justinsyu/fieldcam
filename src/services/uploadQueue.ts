@@ -11,6 +11,7 @@ interface EnqueueParams {
   provider: CloudProvider;
   folderId: string;
   folderName: string;
+  annotations?: string;
 }
 
 interface DbRow {
@@ -59,10 +60,10 @@ export const uploadQueue = {
 
     await db.runAsync(
       `INSERT INTO upload_queue
-        (id, local_uri, file_name, mime_type, file_size, status, provider, folder_id, folder_name, created_at)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+        (id, local_uri, file_name, mime_type, file_size, status, provider, folder_id, folder_name, created_at, annotations)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
       [id, params.localUri, params.fileName, params.mimeType, params.fileSize,
-       params.provider, params.folderId, params.folderName, now]
+       params.provider, params.folderId, params.folderName, now, params.annotations ?? null]
     );
 
     return {
