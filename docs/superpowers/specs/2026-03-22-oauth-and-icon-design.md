@@ -51,7 +51,16 @@ interface FieldCamUser {
 
 Note: `FieldCamUser` is an in-memory model populated from Firebase Auth state. It does NOT contain linked cloud accounts or tokens. Linked accounts are stored separately in `expo-secure-store` and loaded at runtime via `getLinkedAccounts()`. This prevents token data from leaking into any persisted user record.
 
-### 1.5 Backend Identity
+### 1.5 Account Deletion
+
+Apple App Review requires account deletion capability when account creation is offered. The Settings screen must include a "Delete Account" option that:
+1. Calls `firebase.auth().currentUser.delete()` to remove the Firebase account
+2. Clears all linked cloud accounts from secure storage (tokens only, does NOT delete cloud files)
+3. Clears all local data (upload queue, settings, favorites)
+4. Shows a confirmation dialog before proceeding ("This will permanently delete your FieldCam account. Your cloud storage files will not be affected.")
+5. Redirects to the login screen
+
+### 1.6 Backend Identity
 
 The existing Express backend (`backend/`) currently has NO authentication. As part of this work:
 
@@ -61,7 +70,7 @@ The existing Express backend (`backend/`) currently has NO authentication. As pa
 - Apply middleware to all API routes (`/v1/process`, `/v1/profiles`)
 - Email is never used as an identifier in backend logic
 
-### 1.6 Development Build Requirement
+### 1.7 Development Build Requirement
 
 `@react-native-google-signin/google-signin` and native Apple Sign-In cannot run in Expo Go. A custom development build is required:
 
@@ -96,23 +105,36 @@ interface LinkedCloudAccount {
 - Storage key pattern: `fieldcam_cloud_{provider}` stores the full `LinkedCloudAccount` as JSON
 - A `getValidAccessToken(provider)` function checks `expiresAt` before each API call:
   - If token is valid (>5 min remaining), return it
-  - If expired, call provider-specific refresh endpoint, update secure storage, return new token
+  - If expired, refresh using provider-specific strategy:
+    - **Google:** Call `GoogleSignin.getTokens()` or `GoogleSignin.signInSilently()` (library-managed refresh, no manual HTTP call)
+    - **Microsoft:** Call `https://login.microsoftonline.com/common/oauth2/v2.0/token` with stored `refreshToken`
+    - **Dropbox:** Call `https://api.dropboxapi.com/oauth2/token` with stored `refreshToken`
+  - Update secure storage with new token
   - If refresh fails, mark account as disconnected, prompt user to re-link
 - V1 is on-device only. If server-side uploads are added later, tokens move to an encrypted backend store with revoke/unlink UX.
+- **One account per provider.** V1 supports linking at most one Google Drive, one OneDrive, and one Dropbox account. The storage key `fieldcam_cloud_{provider}` enforces this constraint.
 
 ### 2.3 Google Drive
 
-**OAuth flow:** When user signs in with Google via Firebase, Drive scopes are requested in the same flow (one consent screen, same account guaranteed). When user signs in with email/Apple, Google Drive is linked separately via a standard OAuth flow (separate consent screen; the Drive account may differ from the identity account, and that is acceptable).
+**OAuth flow:** When user signs in with Google via Firebase, Drive scopes are requested in the same `GoogleSignin.configure({ scopes: [...] })` call (one consent screen, same account guaranteed). When user signs in with email/Apple, Google Drive is linked separately by calling `GoogleSignin.signIn()` with Drive scopes but WITHOUT exchanging the credential with Firebase (Drive-only linking). In both cases, `@react-native-google-signin/google-signin` is used - no separate OAuth client strategy is needed.
 
 **Scopes:**
-- `drive.file` - Create files, access files created by the app (covers uploads)
-- `drive.metadata.readonly` - List and browse all folders and file metadata (covers full folder browsing)
+- `drive` - Full read/write access to all Drive files and folders (covers browsing, folder creation, and uploads anywhere)
 
-These are sensitive (not restricted) scopes. Sensitive scopes require Google verification for public release but do NOT require a security assessment. This avoids the restricted scope compliance burden that full `drive` scope would trigger.
+**Restricted scope compliance:** `drive` is classified as a restricted scope by Google. This requires:
+1. Google OAuth verification for public app distribution
+2. A third-party security assessment (CASA Tier 2 or equivalent)
+3. A privacy policy and limited use disclosure
 
-**Scope limitation on folder creation:** `drive.file` permits creating files (including folders) but only grants ongoing access to files the app itself created. Creating a subfolder inside a pre-existing user folder should work (the app is creating a new resource), but this MUST be validated during implementation against the Google Drive API v3. If folder creation in arbitrary user folders fails with `drive.file`, the scope must be upgraded to `drive` (restricted), which triggers Google's security assessment requirement for public apps. Document the test result before proceeding to production.
+This is the correct scope for UploadCam parity (full folder browsing + folder creation + upload anywhere). Narrower scopes like `drive.file` + `drive.metadata.readonly` were considered but `drive.metadata.readonly` is also restricted, and `drive.file` does not reliably support folder creation in arbitrary user folders. Since restricted-scope compliance is unavoidable for full browsing, we use `drive` directly and accept the compliance path.
 
-**Capabilities:** Browse all folders, create new folders, upload photos to any folder. Full UploadCam parity (pending scope validation above).
+**Google token model (different from Microsoft/Dropbox):** The `@react-native-google-signin/google-signin` library manages token refresh internally. Do NOT store a Google refresh token on-device or call `oauth2.googleapis.com/token` directly. Instead:
+- Call `GoogleSignin.getTokens()` to get the current `accessToken`
+- If the token is expired, call `GoogleSignin.signInSilently()` which refreshes it automatically
+- The `LinkedCloudAccount` for Google stores the `accessToken` and `expiresAt` as a cache, but refresh is always handled via the library, not via a manual HTTP refresh call
+- This differs from Microsoft/Dropbox which store refresh tokens and call token endpoints directly
+
+**Capabilities:** Browse all folders, create new folders anywhere, upload photos to any folder. Full UploadCam parity.
 
 **Client setup:**
 - Register an Android OAuth client in Google Cloud Console with package name `com.fieldcam.app` and SHA-1 signing certificate fingerprint
@@ -146,7 +168,7 @@ These are sensitive (not restricted) scopes. Sensitive scopes require Google ver
 
 **OAuth flow:** Always a separate linking flow. Uses Dropbox OAuth 2.0 with PKCE.
 
-**Scopes (set in Dropbox App Console, not in auth URL):**
+**Scopes (configured in Dropbox App Console for v1; Dropbox also supports per-authorization scope requests via the `scope` parameter in the auth URL, which can be used for incremental permissions in future versions):**
 - `files.content.write` - Upload files, create folders
 - `files.content.read` - Read file content (for previews if needed)
 - `files.metadata.read` - List folders and file metadata
@@ -168,12 +190,12 @@ These are sensitive (not restricted) scopes. Sensitive scopes require Google ver
 - Enable the scopes listed above in the Permissions tab
 - Set redirect URI to `fieldcam://oauth/dropbox`
 
-### 2.6 Token Refresh Endpoints
+### 2.6 Token Refresh Strategy
 
-Each provider's refresh endpoint for `tokenRefresh.ts`:
-- **Google:** `POST https://oauth2.googleapis.com/token` with `grant_type=refresh_token`
-- **Microsoft:** `POST https://login.microsoftonline.com/common/oauth2/v2.0/token` with `grant_type=refresh_token`
-- **Dropbox:** `POST https://api.dropboxapi.com/oauth2/token` with `grant_type=refresh_token`
+`tokenRefresh.ts` handles provider-specific refresh:
+- **Google:** Delegates to `GoogleSignin.getTokens()` / `GoogleSignin.signInSilently()`. No HTTP call. No stored refresh token.
+- **Microsoft:** `POST https://login.microsoftonline.com/common/oauth2/v2.0/token` with stored `refreshToken` and `grant_type=refresh_token`
+- **Dropbox:** `POST https://api.dropboxapi.com/oauth2/token` with stored `refreshToken` and `grant_type=refresh_token`
 
 ### 2.7 Disconnected Account UX
 
@@ -253,7 +275,7 @@ The upload worker and folder picker call `getProvider()` instead of hardcoding `
 
 - Replace three cloud provider buttons with: Email/Password form, Google Sign-In button, Sign in with Apple button
 - Add "Connect Cloud Storage" section in Settings (not login) for linking Drive/OneDrive/Dropbox
-- Dev mode bypass remains for development but must be updated to create a mock `FieldCamUser` with `uid`, `initialAuthProvider`, and empty `linkedAccounts`
+- Dev mode bypass remains for development but must be updated to create a mock `FieldCamUser` with `uid` and `initialAuthProvider`. No `linkedAccounts` field (cloud accounts are stored separately in secure storage, not on the user model)
 
 ### 4.6 types/auth.ts
 
