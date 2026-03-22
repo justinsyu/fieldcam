@@ -80,6 +80,14 @@ function RootLayoutNav() {
             headerTintColor: colors.white,
           }}
         />
+        <Stack.Screen
+          name="folder-picker"
+          options={{
+            title: 'Choose Folder',
+            headerStyle: { backgroundColor: colors.bgPrimary },
+            headerTintColor: colors.white,
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
     </ThemeProvider>

@@ -10,15 +10,16 @@ interface CameraTopBarProps {
   onSettingsPress: () => void;
   flash: 'off' | 'on';
   onFlashToggle: () => void;
+  onFolderPress?: () => void;
 }
 
-export function CameraTopBar({ folderName, onSettingsPress, flash, onFlashToggle }: CameraTopBarProps) {
+export function CameraTopBar({ folderName, onSettingsPress, flash, onFlashToggle, onFolderPress }: CameraTopBarProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.folderRow}>
+      <TouchableOpacity style={styles.folderRow} onPress={onFolderPress} activeOpacity={onFolderPress ? 0.7 : 1}>
         <Ionicons name="folder" size={18} color={colors.white} style={styles.folderIcon} />
         <Text style={styles.folderText} numberOfLines={1}>{folderName}</Text>
-      </View>
+      </TouchableOpacity>
       <View style={styles.actions}>
         <TouchableOpacity onPress={onFlashToggle} style={styles.iconButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons

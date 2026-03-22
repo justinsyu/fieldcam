@@ -8,14 +8,22 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 import { Button } from '../../src/components/ui';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { uploadQueue } from '../../src/services/uploadQueue';
 import { useUploads } from '../../src/context/UploadContext';
+import { folderService, type FolderInfo } from '../../src/services/folderService';
 
 export default function CameraScreen() {
   const { cameraRef, permission, requestPermission, facing, flash, toggleFacing, toggleFlash, takePicture } = useCamera();
   const [isCapturing, setIsCapturing] = useState(false);
   const { refresh } = useUploads();
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      folderService.getCurrentFolder().then(setCurrentFolder);
+    }, [])
+  );
 
   const handleCapture = useCallback(async () => {
     setIsCapturing(true);
@@ -28,16 +36,16 @@ export default function CameraScreen() {
           fileName: `fieldcam_${Date.now()}.jpg`,
           mimeType: 'image/jpeg',
           fileSize: 0,
-          provider: 'google',
-          folderId: 'root',
-          folderName: 'Not set',
+          provider: (currentFolder?.provider ?? 'google') as import('../../src/types/auth').CloudProvider,
+          folderId: currentFolder?.id ?? 'root',
+          folderName: currentFolder?.name ?? 'Not set',
         });
         await refresh();
       }
     } finally {
       setIsCapturing(false);
     }
-  }, [takePicture, refresh]);
+  }, [takePicture, refresh, currentFolder]);
 
   if (!permission) return <View style={styles.container} />;
 
@@ -54,10 +62,11 @@ export default function CameraScreen() {
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing={facing} flash={flash}>
         <CameraTopBar
-          folderName="Not set"
+          folderName={currentFolder?.name ?? 'Not set'}
           onSettingsPress={() => {}}
           flash={flash}
           onFlashToggle={toggleFlash}
+          onFolderPress={() => router.push('/folder-picker')}
         />
         <View style={styles.spacer} />
         <CameraControls
