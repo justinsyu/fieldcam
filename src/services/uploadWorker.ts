@@ -1,6 +1,6 @@
 import { uploadQueue } from './uploadQueue';
-import { googleDrive } from './cloudStorage/googleDrive';
-import { secureStorage } from './secureStorage';
+import { getProvider } from './cloudStorage/registry';
+import { getValidAccessToken } from './oauth/tokenRefresh';
 import type { UploadItem } from '../types/upload';
 
 let isProcessing = false;
@@ -22,12 +22,9 @@ export async function processUploadQueue(): Promise<void> {
 async function processItem(item: UploadItem): Promise<void> {
   try {
     await uploadQueue.updateStatus(item.id, 'uploading');
-    const accessToken = await secureStorage.getToken(item.provider);
-    if (!accessToken) {
-      await uploadQueue.updateStatus(item.id, 'failed', 'Not authenticated');
-      return;
-    }
-    const result = await googleDrive.uploadFile(
+    const accessToken = await getValidAccessToken(item.provider);
+    const provider = getProvider(item.provider);
+    const result = await provider.uploadFile(
       item.localUri,
       item.fileName,
       item.mimeType,
