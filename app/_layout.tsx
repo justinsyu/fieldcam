@@ -88,6 +88,14 @@ function RootLayoutNav() {
             headerTintColor: colors.white,
           }}
         />
+        <Stack.Screen
+          name="qr-scanner"
+          options={{
+            title: 'Scan QR Code',
+            headerStyle: { backgroundColor: colors.bgPrimary },
+            headerTintColor: colors.white,
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
     </ThemeProvider>
