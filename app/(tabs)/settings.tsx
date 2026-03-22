@@ -6,13 +6,15 @@ import { SectionHeader, Toggle, Card } from '../../src/components/ui';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useAuth } from '../../src/context/AuthContext';
 import { uploadQueue } from '../../src/services/uploadQueue';
+import { secureStorage } from '../../src/services/secureStorage';
+import type { CloudProvider, LinkedCloudAccount } from '../../src/types/auth';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 
 export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount, linkedAccounts, refreshLinkedAccounts } = useAuth();
   const router = useRouter();
 
   const handleClearHistory = () => {
@@ -32,6 +34,62 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your FieldCam account. Your cloud storage files will not be affected.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: deleteAccount },
+      ]
+    );
+  };
+
+  const handleConnectGoogle = async () => {
+    try {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+      await GoogleSignin.hasPlayServices();
+      const signInResult = await GoogleSignin.signIn();
+      const tokens = await GoogleSignin.getTokens();
+      const googleUser = await GoogleSignin.getCurrentUser();
+      const account: LinkedCloudAccount = {
+        provider: 'google',
+        email: googleUser?.data?.user.email ?? '',
+        accessToken: tokens.accessToken,
+        refreshToken: null,
+        expiresAt: Date.now() + 3600 * 1000,
+        linkedAt: new Date().toISOString(),
+      };
+      await secureStorage.saveCloudAccount(account);
+      await refreshLinkedAccounts();
+    } catch (error: any) {
+      if (error.code !== 'SIGN_IN_CANCELLED') {
+        Alert.alert('Failed to connect', error.message ?? String(error));
+      }
+    }
+  };
+
+  const handleConnectMicrosoft = () => Alert.alert('Coming soon', 'Microsoft OneDrive linking requires app registration.');
+  const handleConnectDropbox = () => Alert.alert('Coming soon', 'Dropbox linking requires app registration.');
+
+  const handleDisconnect = async (provider: CloudProvider) => {
+    Alert.alert(
+      'Disconnect',
+      `Disconnect ${provider === 'google' ? 'Google Drive' : provider === 'microsoft' ? 'OneDrive' : 'Dropbox'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            await secureStorage.deleteCloudAccount(provider);
+            await refreshLinkedAccounts();
+          },
+        },
+      ]
+    );
+  };
+
   if (!settings) return null;
 
   return (
@@ -43,6 +101,39 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={signOut} style={styles.signOutButton}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
+        </Card>
+
+        <SectionHeader title="Cloud Storage" />
+        <Card style={styles.card}>
+          {(['google', 'microsoft', 'dropbox'] as CloudProvider[]).map((provider, index) => {
+            const linked = linkedAccounts.find((a) => a.provider === provider);
+            const icon = provider === 'google' ? 'logo-google' : provider === 'microsoft' ? 'logo-windows' : 'cloud-outline';
+            const label = provider === 'google' ? 'Google Drive' : provider === 'microsoft' ? 'OneDrive' : 'Dropbox';
+            return (
+              <View key={provider} style={[styles.cloudRow, index < 2 && styles.cloudRowBorder]}>
+                <View style={styles.cloudRowLeft}>
+                  <Ionicons name={icon} size={20} color={colors.textPrimary} />
+                  <View style={styles.cloudRowInfo}>
+                    <Text style={styles.cloudLabel}>{label}</Text>
+                    {linked && <Text style={styles.cloudEmail}>{linked.email}</Text>}
+                  </View>
+                </View>
+                {linked ? (
+                  <TouchableOpacity onPress={() => handleDisconnect(provider)}>
+                    <Text style={styles.disconnectText}>Disconnect</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={
+                    provider === 'google' ? handleConnectGoogle
+                    : provider === 'microsoft' ? handleConnectMicrosoft
+                    : handleConnectDropbox
+                  }>
+                    <Text style={styles.connectText}>Connect</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })}
         </Card>
 
         <SectionHeader title="Upload" />
@@ -136,8 +227,11 @@ export default function SettingsScreen() {
             <Text style={styles.maintenanceText}>App Permissions</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleClearHistory} style={styles.maintenanceRow}>
+          <TouchableOpacity onPress={handleClearHistory} style={[styles.maintenanceRow, styles.maintenanceRowBorder]}>
             <Text style={styles.maintenanceText}>Clear Upload History</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDeleteAccount} style={styles.maintenanceRow}>
+            <Text style={[styles.maintenanceText, styles.deleteText]}>Delete Account</Text>
           </TouchableOpacity>
         </Card>
 
@@ -179,6 +273,42 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.error,
   },
+  cloudRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  cloudRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  cloudRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  cloudRowInfo: {
+    marginLeft: spacing.sm,
+    flex: 1,
+  },
+  cloudLabel: {
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  cloudEmail: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  connectText: {
+    ...typography.body,
+    color: colors.orange,
+  },
+  disconnectText: {
+    ...typography.body,
+    color: colors.error,
+  },
   maintenanceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -193,6 +323,9 @@ const styles = StyleSheet.create({
   maintenanceText: {
     ...typography.body,
     color: colors.textPrimary,
+  },
+  deleteText: {
+    color: colors.error,
   },
   versionContainer: {
     alignItems: 'center',
