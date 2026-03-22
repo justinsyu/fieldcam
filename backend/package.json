@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "helmet": "^8.1.0"
