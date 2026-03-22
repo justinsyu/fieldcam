@@ -1,25 +1,32 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { colors } from '../../src/theme';
+import { useUploads } from '../../src/context/UploadContext';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { pendingCount } = useUploads();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: useClientOnlyValue(false, true),
+        tabBarActiveTintColor: colors.orange,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.bgSecondary,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        headerStyle: { backgroundColor: colors.bgPrimary },
+        headerTintColor: colors.white,
+        headerShadowVisible: false,
       }}>
       <Tabs.Screen
         name="camera"
         options={{
           title: 'Camera',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="camera" size={26} color={color} />
+            <Ionicons name="camera" size={32} color={color} />
           ),
         }}
       />
@@ -27,6 +34,8 @@ export default function TabLayout() {
         name="uploads"
         options={{
           title: 'Uploads',
+          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.orange },
           tabBarIcon: ({ color }) => (
             <Ionicons name="cloud-upload" size={26} color={color} />
           ),
