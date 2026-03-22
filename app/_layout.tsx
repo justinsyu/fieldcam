@@ -105,6 +105,14 @@ function RootLayoutNav() {
             headerTintColor: colors.white,
           }}
         />
+        <Stack.Screen
+          name="permissions"
+          options={{
+            title: 'App Permissions',
+            headerStyle: { backgroundColor: colors.bgPrimary },
+            headerTintColor: colors.white,
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
       <StatusBar style="light" />

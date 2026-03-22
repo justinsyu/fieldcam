@@ -1,6 +1,8 @@
 import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { ScreenContainer, SectionHeader, Toggle, Card } from '../../src/components/ui';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { SectionHeader, Toggle, Card } from '../../src/components/ui';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useAuth } from '../../src/context/AuthContext';
 import { uploadQueue } from '../../src/services/uploadQueue';
@@ -11,6 +13,7 @@ import { spacing } from '../../src/theme/spacing';
 export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   const handleClearHistory = () => {
     Alert.alert(
@@ -32,7 +35,7 @@ export default function SettingsScreen() {
   if (!settings) return null;
 
   return (
-    <ScreenContainer>
+    <View style={styles.container}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <SectionHeader title="Account" />
         <Card style={styles.card}>
@@ -126,6 +129,13 @@ export default function SettingsScreen() {
 
         <SectionHeader title="Maintenance" />
         <Card style={styles.card}>
+          <TouchableOpacity
+            onPress={() => router.push('/permissions')}
+            style={[styles.maintenanceRow, styles.maintenanceRowBorder]}
+          >
+            <Text style={styles.maintenanceText}>App Permissions</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleClearHistory} style={styles.maintenanceRow}>
             <Text style={styles.maintenanceText}>Clear Upload History</Text>
           </TouchableOpacity>
@@ -135,11 +145,15 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>FieldCam 1.0.0</Text>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.bgPrimary,
+  },
   scroll: {
     flex: 1,
   },
@@ -166,8 +180,15 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   maintenanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+  },
+  maintenanceRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   maintenanceText: {
     ...typography.body,
