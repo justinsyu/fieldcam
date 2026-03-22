@@ -60,4 +60,12 @@ export const folderService = {
     const updated = [folder, ...filtered].slice(0, MAX_RECENTS);
     await AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(updated));
   },
+
+  async removeFromRecents(folder: FolderInfo): Promise<void> {
+    const recents = await folderService.getRecents();
+    const updated = recents.filter(
+      (f) => !(f.id === folder.id && f.provider === folder.provider)
+    );
+    await AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(updated));
+  },
 };

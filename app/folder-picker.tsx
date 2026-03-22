@@ -70,6 +70,8 @@ export default function FolderPickerScreen() {
         name: f.name,
         provider: 'google',
       }));
+      // Sort alphabetically
+      folderInfos.sort((a, b) => a.name.localeCompare(b.name));
       setBrowser((prev) => ({ ...prev, folders: folderInfos, loading: false }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -129,18 +131,73 @@ export default function FolderPickerScreen() {
     router.back();
   }, [browser.folderId, browser.folderName]);
 
-  const selectAndGoBack = useCallback(
+  const selectAndGoBack = useCallback(async (folder: FolderInfo) => {
+    await folderService.setCurrentFolder(folder);
+    router.back();
+  }, []);
+
+  // Star/favorite toggle for the currently browsed folder
+  const toggleFavoriteForBrowser = useCallback(async () => {
+    const folder: FolderInfo = {
+      id: browser.folderId,
+      name: browser.folderName,
+      provider: 'google',
+    };
+    const isFav = favorites.some((f) => f.id === folder.id && f.provider === folder.provider);
+    if (isFav) {
+      await folderService.removeFavorite(folder);
+    } else {
+      await folderService.addFavorite(folder);
+    }
+    await loadData();
+  }, [browser.folderId, browser.folderName, favorites, loadData]);
+
+  const isBrowserFolderFavorited = favorites.some(
+    (f) => f.id === browser.folderId && f.provider === 'google'
+  );
+
+  // Create new subfolder in current browser location
+  const createSubfolder = useCallback(async () => {
+    const token = await secureStorage.getToken('google');
+    if (!token) {
+      Alert.alert('Not signed in', 'Please sign in with Google first.');
+      return;
+    }
+    Alert.prompt(
+      'New Folder',
+      'Enter a name for the new folder:',
+      async (name) => {
+        if (!name || !name.trim()) return;
+        try {
+          await googleDrive.createFolder(name.trim(), browser.folderId, token);
+          // Reload current folder contents
+          loadFolders(browser.folderId);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          Alert.alert('Error creating folder', msg);
+        }
+      },
+      'plain-text'
+    );
+  }, [browser.folderId, loadFolders]);
+
+  const removeFromRecents = useCallback(
     async (folder: FolderInfo) => {
-      await folderService.setCurrentFolder(folder);
-      router.back();
+      await folderService.removeFromRecents(folder);
+      await loadData();
     },
-    []
+    [loadData]
   );
 
   const renderBrowser = () => (
     <View style={styles.browserSection}>
+      {/* Browser header: back button, folder title, star, new-folder */}
       <View style={styles.browserHeader}>
-        <TouchableOpacity onPress={goBack} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={goBack}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons name="chevron-back" size={20} color={colors.orange} />
           <Text style={styles.backText}>
             {browser.stack.length > 0
@@ -148,9 +205,44 @@ export default function FolderPickerScreen() {
               : 'Close'}
           </Text>
         </TouchableOpacity>
+
         <Text style={styles.browserTitle} numberOfLines={1}>
           {browser.folderName}
         </Text>
+
+        <View style={styles.browserHeaderActions}>
+          {/* Star/favorite button (only meaningful when not at root) */}
+          {browser.folderId !== 'root' && (
+            <TouchableOpacity
+              onPress={toggleFavoriteForBrowser}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerIconButton}
+            >
+              <Ionicons
+                name={isBrowserFolderFavorited ? 'star' : 'star-outline'}
+                size={20}
+                color={isBrowserFolderFavorited ? '#F59E0B' : colors.textSecondary}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* New subfolder button */}
+          <TouchableOpacity
+            onPress={createSubfolder}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.headerIconButton}
+          >
+            <View style={styles.newFolderIconWrapper}>
+              <Ionicons name="folder-open-outline" size={20} color={colors.textSecondary} />
+              <Text style={styles.newFolderPlus}>+</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Sort indicator */}
+      <View style={styles.sortRow}>
+        <Text style={styles.sortLabel}>A-Z</Text>
       </View>
 
       {browser.loading ? (
@@ -174,8 +266,12 @@ export default function FolderPickerScreen() {
         />
       )}
 
+      {/* Take Photos Here FAB */}
       <View style={styles.takePhotosContainer}>
-        <Button label="Take Photos Here" onPress={takePhotosHere} />
+        <TouchableOpacity style={styles.takePhotosFab} onPress={takePhotosHere} activeOpacity={0.8}>
+          <Ionicons name="camera" size={20} color={colors.white} style={styles.fabIcon} />
+          <Text style={styles.fabLabel}>Take Photos Here</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -208,45 +304,57 @@ export default function FolderPickerScreen() {
 
       {browserVisible && renderBrowser()}
 
-      {favorites.length > 0 && (
-        <>
-          <SectionHeader title="Favorites" />
-          <Card style={styles.listCard}>
-            <FlatList
-              data={favorites}
-              keyExtractor={(item) => `fav-${item.id}`}
-              renderItem={({ item }) => (
-                <FolderListItem
-                  name={item.name}
-                  isSelected={currentFolder?.id === item.id}
-                  onPress={() => selectAndGoBack(item)}
-                />
-              )}
-              scrollEnabled={false}
-            />
-          </Card>
-        </>
-      )}
+      {/* Favorites section - always shown (empty state when no favorites) */}
+      <SectionHeader title="Favorites" />
+      <Card style={styles.listCard}>
+        {favorites.length > 0 ? (
+          <FlatList
+            data={favorites}
+            keyExtractor={(item) => `fav-${item.id}`}
+            renderItem={({ item }) => (
+              <FolderListItem
+                name={item.name}
+                isSelected={currentFolder?.id === item.id}
+                onPress={() => selectAndGoBack(item)}
+              />
+            )}
+            scrollEnabled={false}
+          />
+        ) : (
+          <Text style={styles.emptyStateText}>Folders marked as favorites will appear here</Text>
+        )}
+      </Card>
 
-      {recents.length > 0 && (
-        <>
-          <SectionHeader title="Recent" />
-          <Card style={styles.listCard}>
-            <FlatList
-              data={recents}
-              keyExtractor={(item) => `rec-${item.id}`}
-              renderItem={({ item }) => (
-                <FolderListItem
-                  name={item.name}
-                  isSelected={currentFolder?.id === item.id}
-                  onPress={() => selectAndGoBack(item)}
-                />
-              )}
-              scrollEnabled={false}
-            />
-          </Card>
-        </>
-      )}
+      {/* Recents section - always shown (empty state when no recents) */}
+      <SectionHeader title="Recent" />
+      <Card style={styles.listCard}>
+        {recents.length > 0 ? (
+          <FlatList
+            data={recents}
+            keyExtractor={(item) => `rec-${item.id}`}
+            renderItem={({ item }) => (
+              <FolderListItem
+                name={item.name}
+                isSelected={currentFolder?.id === item.id}
+                onPress={() => selectAndGoBack(item)}
+                onLongPress={() => {
+                  Alert.alert(item.name, undefined, [
+                    {
+                      text: 'Remove from recents',
+                      style: 'destructive',
+                      onPress: () => removeFromRecents(item),
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
+              />
+            )}
+            scrollEnabled={false}
+          />
+        ) : (
+          <Text style={styles.emptyStateText}>Recently used folders will appear here</Text>
+        )}
+      </Card>
     </ScreenContainer>
   );
 }
@@ -321,7 +429,36 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.textPrimary,
     flex: 1,
-    textAlign: 'right',
+    textAlign: 'center',
+  },
+  browserHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconButton: {
+    marginLeft: spacing.sm,
+  },
+  newFolderIconWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  newFolderPlus: {
+    ...typography.label,
+    color: colors.textSecondary,
+    marginLeft: 2,
+    fontSize: 14,
+  },
+  sortRow: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    alignItems: 'flex-end',
+  },
+  sortLabel: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 11,
   },
   loader: {
     padding: spacing.xl,
@@ -332,9 +469,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: spacing.lg,
   },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    padding: spacing.lg,
+  },
   takePhotosContainer: {
     padding: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  takePhotosFab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.orange,
+    borderRadius: 28,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  fabIcon: {
+    marginRight: spacing.sm,
+  },
+  fabLabel: {
+    ...typography.label,
+    color: colors.white,
+    fontSize: 15,
   },
 });
