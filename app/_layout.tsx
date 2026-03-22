@@ -71,6 +71,15 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="profile-editor"
+          options={{
+            presentation: 'modal',
+            title: 'Edit Profile',
+            headerStyle: { backgroundColor: colors.bgPrimary },
+            headerTintColor: colors.white,
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
     </ThemeProvider>
