@@ -18,8 +18,10 @@ describe('getProvider', () => {
     expect(provider.uploadFile).toBeDefined();
   });
 
-  it('throws for unregistered microsoft', () => {
-    expect(() => getProvider('microsoft')).toThrow('not registered');
+  it('returns onedrive provider', () => {
+    const provider = getProvider('microsoft');
+    expect(provider).toBeDefined();
+    expect(provider.listFolders).toBeDefined();
   });
 
   it('throws for unregistered dropbox', () => {
