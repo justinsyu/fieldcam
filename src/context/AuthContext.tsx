@@ -5,7 +5,7 @@ import { performOAuth } from '../services/oauth';
 import type { User, CloudProvider, AuthState } from '../types/auth';
 
 interface AuthContextValue extends AuthState {
-  signIn: (provider: CloudProvider) => Promise<void>;
+  signIn: (provider: CloudProvider, devBypass?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -21,7 +21,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const signIn = useCallback(async (provider: CloudProvider) => {
+  const signIn = useCallback(async (provider: CloudProvider, devBypass?: boolean) => {
+    // Dev-mode bypass: skip OAuth entirely and use a mock user
+    if (__DEV__ && devBypass) {
+      const mockUser: User = {
+        id: 'dev-user',
+        email: 'dev@fieldcam.local',
+        displayName: 'Dev User',
+        cloudAccounts: [],
+        primaryProvider: provider,
+      };
+      await secureStorage.saveUser(mockUser);
+      setState({ user: mockUser, isAuthenticated: true, isLoading: false });
+      return;
+    }
+
     try {
       const account = await performOAuth(provider);
       if (!account) {

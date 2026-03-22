@@ -5,6 +5,8 @@ import { useAuth } from '../../src/context/AuthContext';
 import { Button } from '../../src/components/ui';
 import { colors } from '../../src/theme/colors';
 
+const __DEV_MODE__ = __DEV__;
+
 export default function LoginScreen() {
   const { signIn } = useAuth();
 
@@ -39,6 +41,17 @@ export default function LoginScreen() {
             variant="secondary"
           />
         </View>
+
+        {__DEV_MODE__ && (
+          <>
+            <View style={styles.buttonSpacer} />
+            <Button
+              label="Skip Login (Dev Mode)"
+              onPress={() => signIn('google', true)}
+              variant="ghost"
+            />
+          </>
+        )}
 
         <Text style={styles.footer}>
           By signing in, you agree to our Terms of Service and Privacy Policy.

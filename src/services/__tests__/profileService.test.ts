@@ -124,33 +124,17 @@ describe('profileService', () => {
   });
 
   describe('seedDefaults', () => {
-    it('does not seed if profiles already exist', async () => {
-      mockDb.getFirstAsync.mockResolvedValueOnce({ count: 3 });
-
-      await profileService.seedDefaults();
-
-      expect(mockDb.runAsync).not.toHaveBeenCalled();
-    });
-
-    it('seeds 3 default profiles when count is 0', async () => {
-      mockDb.getFirstAsync.mockResolvedValueOnce({ count: 0 });
-
+    it('always runs 3 INSERT OR IGNORE statements', async () => {
       await profileService.seedDefaults();
 
       expect(mockDb.runAsync).toHaveBeenCalledTimes(3);
+      // All 3 use INSERT OR IGNORE so duplicates are safely ignored
+      for (const call of mockDb.runAsync.mock.calls) {
+        expect(call[0]).toContain('INSERT OR IGNORE');
+      }
     });
 
-    it('seeds when getFirstAsync returns null', async () => {
-      mockDb.getFirstAsync.mockResolvedValueOnce(null);
-
-      await profileService.seedDefaults();
-
-      expect(mockDb.runAsync).toHaveBeenCalledTimes(3);
-    });
-
-    it('seeds profiles with expected names', async () => {
-      mockDb.getFirstAsync.mockResolvedValueOnce({ count: 0 });
-
+    it('seeds profiles with expected names and fixed IDs', async () => {
       await profileService.seedDefaults();
 
       const calls = mockDb.runAsync.mock.calls;
@@ -158,6 +142,11 @@ describe('profileService', () => {
       expect(insertedNames).toContain('Poster Summary');
       expect(insertedNames).toContain('Slide Notes');
       expect(insertedNames).toContain('Business Card');
+
+      const insertedIds = calls.map((call: unknown[]) => (call[1] as unknown[])[0]);
+      expect(insertedIds).toContain('00000000-0000-0000-0000-000000000001');
+      expect(insertedIds).toContain('00000000-0000-0000-0000-000000000002');
+      expect(insertedIds).toContain('00000000-0000-0000-0000-000000000003');
     });
   });
 
