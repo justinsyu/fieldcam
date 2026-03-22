@@ -1,23 +1,24 @@
 export type CloudProvider = 'google' | 'microsoft' | 'dropbox';
 
-export interface CloudAccount {
+export interface LinkedCloudAccount {
   provider: CloudProvider;
   email: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   expiresAt: number;
+  linkedAt: string;
 }
 
-export interface User {
-  id: string;
+export interface FieldCamUser {
+  uid: string;
   email: string;
   displayName: string;
-  cloudAccounts: CloudAccount[];
-  primaryProvider: CloudProvider;
+  initialAuthProvider: 'email' | 'google' | 'apple';
+  createdAt: string;
 }
 
 export interface AuthState {
-  user: User | null;
+  user: FieldCamUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

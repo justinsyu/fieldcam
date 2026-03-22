@@ -1,30 +1,48 @@
 import * as SecureStore from 'expo-secure-store';
-import type { CloudProvider } from '../types/auth';
+import type { CloudProvider, LinkedCloudAccount, FieldCamUser } from '../types/auth';
 
-const TOKEN_PREFIX = 'fieldcam_token_';
+const CLOUD_PREFIX = 'fieldcam_cloud_';
 const USER_KEY = 'fieldcam_user';
+const ALL_PROVIDERS: CloudProvider[] = ['google', 'microsoft', 'dropbox'];
 
 export const secureStorage = {
-  async saveToken(provider: CloudProvider, token: string): Promise<void> {
-    await SecureStore.setItemAsync(`${TOKEN_PREFIX}${provider}`, token);
+  async saveCloudAccount(account: LinkedCloudAccount): Promise<void> {
+    await SecureStore.setItemAsync(`${CLOUD_PREFIX}${account.provider}`, JSON.stringify(account));
   },
-  async getToken(provider: CloudProvider): Promise<string | null> {
-    return SecureStore.getItemAsync(`${TOKEN_PREFIX}${provider}`);
+
+  async getCloudAccount(provider: CloudProvider): Promise<LinkedCloudAccount | null> {
+    const data = await SecureStore.getItemAsync(`${CLOUD_PREFIX}${provider}`);
+    return data ? JSON.parse(data) : null;
   },
-  async deleteToken(provider: CloudProvider): Promise<void> {
-    await SecureStore.deleteItemAsync(`${TOKEN_PREFIX}${provider}`);
+
+  async deleteCloudAccount(provider: CloudProvider): Promise<void> {
+    await SecureStore.deleteItemAsync(`${CLOUD_PREFIX}${provider}`);
   },
-  async saveUser(user: object): Promise<void> {
+
+  async getLinkedAccounts(): Promise<LinkedCloudAccount[]> {
+    const accounts: LinkedCloudAccount[] = [];
+    for (const provider of ALL_PROVIDERS) {
+      const account = await this.getCloudAccount(provider);
+      if (account) accounts.push(account);
+    }
+    return accounts;
+  },
+
+  async saveUser(user: FieldCamUser): Promise<void> {
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
   },
-  async getUser(): Promise<object | null> {
+
+  async getUser(): Promise<FieldCamUser | null> {
     const data = await SecureStore.getItemAsync(USER_KEY);
     return data ? JSON.parse(data) : null;
   },
+
   async clearAll(): Promise<void> {
     await SecureStore.deleteItemAsync(USER_KEY);
-    for (const provider of ['google', 'microsoft', 'dropbox'] as CloudProvider[]) {
-      await SecureStore.deleteItemAsync(`${TOKEN_PREFIX}${provider}`);
+    for (const provider of ALL_PROVIDERS) {
+      await SecureStore.deleteItemAsync(`${CLOUD_PREFIX}${provider}`);
+      // Clean up legacy keys from pre-Firebase version
+      await SecureStore.deleteItemAsync(`fieldcam_token_${provider}`);
     }
   },
 };
