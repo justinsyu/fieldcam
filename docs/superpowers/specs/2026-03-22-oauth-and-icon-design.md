@@ -30,7 +30,7 @@ This separation enables monetization (subscriptions tied to Firebase uid) and le
 The login screen presents three options:
 
 1. **Email/Password** - Standard Firebase email/password auth with create account flow
-2. **Google Sign-In** - Uses `@react-native-google-signin/google-signin` for native flow, then `signInWithCredential` to Firebase. Google Drive scopes (`drive.file`, `drive.metadata.readonly`) are requested in the same `GoogleSignin.configure({ scopes: [...] })` call so the user sees one consent screen and the returned `accessToken` includes Drive access.
+2. **Google Sign-In** - Uses `@react-native-google-signin/google-signin` for native flow, then `signInWithCredential` to Firebase. The restricted `drive` scope is requested in the same `GoogleSignin.configure({ scopes: ['https://www.googleapis.com/auth/drive'] })` call so the user sees one consent screen and the returned `accessToken` includes Drive access.
 3. **Sign in with Apple** - Uses `expo-apple-authentication` on iOS, then `signInWithCredential` to Firebase. Required by Apple guideline 4.8 when Google Sign-In is present. **iOS only** - the Apple Sign-In button is hidden on Android.
 
 ### 1.3 Firebase Account Linking
@@ -93,7 +93,7 @@ interface LinkedCloudAccount {
   provider: CloudProvider;        // 'google' | 'microsoft' | 'dropbox'
   email: string;                  // Cloud account email (may differ from Firebase email)
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;    // null for Google (library-managed), present for Microsoft/Dropbox
   expiresAt: number;              // Unix timestamp
   linkedAt: string;               // ISO date
 }
@@ -355,8 +355,12 @@ Update the adaptive icon background color and add required plugins for the devel
       "expo-secure-store",
       "expo-web-browser",
       "@react-native-firebase/app",
+      "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      ["expo-build-properties", {
+        "ios": { "useFrameworks": "static" }
+      }]
     ]
   }
 }
@@ -402,7 +406,7 @@ Update the adaptive icon background color and add required plugins for the devel
 - Provider refresh tokens stored only on-device in `expo-secure-store` (v1)
 - PKCE used for all OAuth flows (Google handled natively, Microsoft/Dropbox explicit)
 - No provider tokens transmitted to backend in v1
-- Google `drive.file` + `drive.metadata.readonly` avoids restricted scope compliance
+- Google `drive` scope is restricted; app requires Google OAuth verification and security assessment before public distribution
 - Dropbox uses `token_access_type=offline` for refresh token support
 
 ---
