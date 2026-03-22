@@ -1,3 +1,33 @@
+jest.mock('@react-native-firebase/auth', () => {
+  const mockAuth = () => ({
+    onAuthStateChanged: jest.fn(() => jest.fn()),
+    signInWithEmailAndPassword: jest.fn(),
+    createUserWithEmailAndPassword: jest.fn(),
+    signInWithCredential: jest.fn(),
+    signOut: jest.fn(),
+    currentUser: null,
+  });
+  mockAuth.GoogleAuthProvider = {
+    credential: jest.fn(),
+  };
+  mockAuth.AppleAuthProvider = {
+    credential: jest.fn(),
+  };
+  return mockAuth;
+});
+
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    getTokens: jest.fn(),
+    getCurrentUser: jest.fn(),
+    signInSilently: jest.fn(),
+  },
+}));
+
 // Eagerly resolve all lazy getters installed by expo/src/winter/installGlobal.ts
 // before tests run. This prevents a Jest 30 "import outside of test scope" error
 // that occurs when lazy getters fire during module teardown.
