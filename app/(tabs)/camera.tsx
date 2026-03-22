@@ -89,7 +89,9 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing={facing} flash={flash}>
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} flash={flash} />
+
+      <View style={styles.overlay}>
         <CameraTopBar
           folderName={currentFolder?.name ?? 'Not set'}
           onSettingsPress={() => setSettingsVisible(true)}
@@ -125,7 +127,7 @@ export default function CameraScreen() {
           annotationsEnabled={annotationsEnabled}
           onAnnotationToggle={handleAnnotationToggle}
         />
-      </CameraView>
+      </View>
 
       {settings && (
         <CameraSettingsSheet
@@ -144,8 +146,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.black,
   },
-  camera: {
-    flex: 1,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
   spacer: {
