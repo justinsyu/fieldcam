@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import type { CloudStorageProvider, CloudFolder, CloudFile } from './types';
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';

@@ -9,10 +9,9 @@ import type { UploadItem } from '../src/types/upload';
 import type { CloudProvider } from '../src/types/auth';
 
 const PROVIDER_ICONS: Record<CloudProvider, keyof typeof Ionicons.glyphMap> = {
+  google: 'logo-google',
+  microsoft: 'cloud-outline',
   dropbox: 'cloud-outline',
-  google_drive: 'logo-google',
-  onedrive: 'cloud-outline',
-  sharepoint: 'cloud-outline',
 };
 
 function HistoryListItem({ item }: { item: UploadItem }) {

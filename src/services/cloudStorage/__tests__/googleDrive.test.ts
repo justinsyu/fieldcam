@@ -1,6 +1,6 @@
 global.fetch = jest.fn();
 
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   uploadAsync: jest.fn().mockResolvedValue({
     status: 200,
     body: '{"id":"file-1","name":"photo.jpg","mimeType":"image/jpeg"}',

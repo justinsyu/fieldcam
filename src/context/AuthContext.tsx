@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const googleUser = await GoogleSignin.getCurrentUser();
       const driveAccount: LinkedCloudAccount = {
         provider: 'google',
-        email: googleUser?.data?.user.email ?? '',
+        email: googleUser?.user.email ?? '',
         accessToken: tokens.accessToken,
         refreshToken: null,
         expiresAt: Date.now() + 3600 * 1000,
