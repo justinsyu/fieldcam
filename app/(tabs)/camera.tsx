@@ -3,7 +3,9 @@ import { View, StyleSheet, Text } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { CameraTopBar } from '../../src/components/camera/CameraTopBar';
 import { CameraControls } from '../../src/components/camera/CameraControls';
+import { CameraSettingsSheet } from '../../src/components/camera/CameraSettingsSheet';
 import { useCamera } from '../../src/hooks/useCamera';
+import { useSettings } from '../../src/hooks/useSettings';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
@@ -17,8 +19,10 @@ import { getAnnotationText } from '../../src/services/annotationService';
 export default function CameraScreen() {
   const { cameraRef, permission, requestPermission, facing, flash, toggleFacing, toggleFlash, takePicture } = useCamera();
   const [isCapturing, setIsCapturing] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
   const { refresh } = useUploads();
   const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
+  const { settings, updateSetting } = useSettings();
 
   useFocusEffect(
     useCallback(() => {
@@ -66,12 +70,20 @@ export default function CameraScreen() {
       <CameraView ref={cameraRef} style={styles.camera} facing={facing} flash={flash}>
         <CameraTopBar
           folderName={currentFolder?.name ?? 'Not set'}
-          onSettingsPress={() => {}}
+          onSettingsPress={() => setSettingsVisible(true)}
           flash={flash}
           onFlashToggle={toggleFlash}
           onFolderPress={() => router.push('/folder-picker')}
         />
         <View style={styles.spacer} />
+        {settings?.cameraGrid && (
+          <View style={styles.gridOverlay} pointerEvents="none">
+            <View style={[styles.gridLineV, { left: '33.33%' }]} />
+            <View style={[styles.gridLineV, { left: '66.66%' }]} />
+            <View style={[styles.gridLineH, { top: '33.33%' }]} />
+            <View style={[styles.gridLineH, { top: '66.66%' }]} />
+          </View>
+        )}
         <CameraControls
           onCapture={handleCapture}
           onFlipCamera={toggleFacing}
@@ -79,6 +91,15 @@ export default function CameraScreen() {
           isCapturing={isCapturing}
         />
       </CameraView>
+
+      {settings && (
+        <CameraSettingsSheet
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          settings={settings}
+          onUpdateSetting={updateSetting}
+        />
+      )}
     </View>
   );
 }
@@ -94,6 +115,23 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  gridOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  gridLineH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   permissionContainer: {
     flex: 1,
