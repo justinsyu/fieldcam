@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FieldCam Color Palette Mockups</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f0f; color: #e0e0e0; padding: 24px;
+  }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 32px; }
+  .palette-tabs { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; align-items: center; }
+  .palette-tab {
+    padding: 10px 20px; border-radius: 999px; border: 1px solid #333;
+    background: #1a1a1a; color: #aaa; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;
+  }
+  .palette-tab:hover { border-color: #555; color: #fff; }
+  .palette-tab.active { border-color: #888; color: #fff; background: #333; }
+  .tab-sep { width: 1px; height: 28px; background: #333; margin: 0 4px; flex-shrink: 0; }
+  .comparison-bar {
+    display: flex; gap: 16px; margin-bottom: 24px; padding: 16px 20px;
+    background: #151515; border-radius: 14px; border: 1px solid #222; flex-wrap: wrap;
+  }
+  .comparison-group { display: flex; flex-direction: column; gap: 4px; }
+  .comparison-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+  .comparison-colors { display: flex; gap: 4px; }
+  .comparison-dot { width: 24px; height: 24px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+  .brand-note { font-size: 12px; color: #777; margin-bottom: 24px; padding: 10px 16px; background: #151515; border-radius: 10px; border: 1px solid #222; line-height: 1.6; }
+  .screens-grid { display: grid; grid-template-columns: repeat(auto-fit, 300px); gap: 24px; justify-content: center; }
+  .screen-wrapper { text-align: center; }
+  .screen-label { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .phone {
+    width: 300px; height: 620px; border-radius: 32px; border: 2px solid #333;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+  }
+  .notch { height: 36px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .notch::before { content: ''; width: 80px; height: 5px; border-radius: 3px; background: rgba(128,128,128,0.2); position: absolute; top: 10px; }
+  .sc { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .sc::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<h1>FieldCam Color Palette Mockups</h1>
+<p class="subtitle">Compare color palettes and visual styles across app screens. Click a palette to switch.</p>
+
+<div class="palette-tabs" id="tabs"></div>
+<div id="note"></div>
+<div class="comparison-bar" id="swatches"></div>
+<div class="screens-grid" id="grid"></div>
+
+<script>
+const P = {
+  current: {
+    name: 'Current Dark', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#0A0E1A', bg2: '#111827', bgc: '#1A2137', bge: '#1F2A45',
+    t1: '#FFFFFF', t2: '#94A3B8', tm: '#64748B',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1E293B', bdl: '#334155', ma: null, lt: false,
+  },
+  copper: {
+    name: 'Earthy Copper', g: 'fc',
+    a: '#C8702A', al: '#D4865A', nv: '#152455',
+    bg1: '#0A0E1A', bg2: '#111827', bgc: '#1A2137', bge: '#1F2A45',
+    t1: '#FFFFFF', t2: '#94A3B8', tm: '#64748B',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1E293B', bdl: '#334155', ma: null, lt: false,
+  },
+  sienna: {
+    name: 'Raw Sienna', g: 'fc',
+    a: '#B5651D', al: '#CC8A52', nv: '#152455',
+    bg1: '#0A0E1A', bg2: '#111827', bgc: '#1A2137', bge: '#1F2A45',
+    t1: '#FFFFFF', t2: '#94A3B8', tm: '#64748B',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1E293B', bdl: '#334155', ma: null, lt: false,
+  },
+  midblue: {
+    name: 'Sky Accent', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#0A0E1A', bg2: '#111827', bgc: '#1A2137', bge: '#1F2A45',
+    t1: '#FFFFFF', t2: '#94A3B8', tm: '#64748B',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1E293B', bdl: '#334155', ma: '#38BDF8', lt: false,
+  },
+  teal: {
+    name: 'Teal Accent', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#0A0E1A', bg2: '#111827', bgc: '#1A2137', bge: '#1F2A45',
+    t1: '#FFFFFF', t2: '#94A3B8', tm: '#64748B',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1E293B', bdl: '#334155', ma: '#10B981', lt: false,
+  },
+  warmgray: {
+    name: 'Warm Grays', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#0C0E12', bg2: '#141619', bgc: '#1D1F24', bge: '#26282E',
+    t1: '#FFFFFF', t2: '#9CA3AF', tm: '#6B7280',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1F2124', bdl: '#36383D', ma: null, lt: false,
+  },
+  earthtone: {
+    name: 'Full Earth Tone', g: 'fc',
+    a: '#CC6B2E', al: '#D98B56', nv: '#1A1F4B',
+    bg1: '#0B0D14', bg2: '#12151C', bgc: '#1A1D27', bge: '#242730',
+    t1: '#FFFFFF', t2: '#9CA3AF', tm: '#6B7280',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#3B82F6',
+    bd: '#1F2128', bdl: '#33363E', ma: '#6B7F3A', lt: false,
+  },
+  lightClean: {
+    name: 'Clean White', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#FFFFFF', bg2: '#F8FAFC', bgc: '#FFFFFF', bge: '#F1F5F9',
+    t1: '#0F172A', t2: '#64748B', tm: '#94A3B8',
+    ok: '#16A34A', err: '#DC2626', wrn: '#D97706', inf: '#2563EB',
+    bd: '#E2E8F0', bdl: '#CBD5E1', ma: null, lt: true,
+  },
+  lightWarm: {
+    name: 'Warm Cream', g: 'fc',
+    a: '#C8702A', al: '#D4865A', nv: '#1E293B',
+    bg1: '#FEFCF9', bg2: '#F9F5F0', bgc: '#FFFFFF', bge: '#F3EDE6',
+    t1: '#1C1917', t2: '#78716C', tm: '#A8A29E',
+    ok: '#16A34A', err: '#DC2626', wrn: '#D97706', inf: '#2563EB',
+    bd: '#E7E5E4', bdl: '#D6D3D1', ma: null, lt: true,
+  },
+  lightCool: {
+    name: 'Cool Gray', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#F2F2F7', bg2: '#FFFFFF', bgc: '#FFFFFF', bge: '#E5E5EA',
+    t1: '#1C1C1E', t2: '#6C6C70', tm: '#AEAEB2',
+    ok: '#30D158', err: '#FF3B30', wrn: '#FF9500', inf: '#007AFF',
+    bd: '#D1D1D6', bdl: '#C7C7CC', ma: null, lt: true,
+  },
+  lightNavy: {
+    name: 'Navy Header', g: 'fc',
+    a: '#DA532C', al: '#E8764F', nv: '#152455',
+    bg1: '#FFFFFF', bg2: '#152455', bgc: '#F8FAFC', bge: '#EEF2FF',
+    t1: '#0F172A', t2: '#475569', tm: '#94A3B8',
+    ok: '#16A34A', err: '#DC2626', wrn: '#D97706', inf: '#2563EB',
+    bd: '#E2E8F0', bdl: '#CBD5E1', ma: null, lt: true, nb: true,
+  },
+  // ---- LLAMAINDEX ----
+  llamaindex: {
+    name: 'LlamaIndex', g: 'llama',
+    a: '#000000', al: '#1f1f1f', nv: '#000000',
+    bg1: '#FFFFFF', bg2: '#f5f5f5', bgc: '#FFFFFF', bge: '#f5f5f5',
+    t1: '#000000', t2: '#7f7f7f', tm: '#a0a0a0',
+    ok: '#22C55E', err: '#EF4444', wrn: '#F59E0B', inf: '#4b72fe',
+    bd: '#e7e7e7', bdl: '#d4d4d4', ma: '#4b72fe', lt: true,
+    grad: 'linear-gradient(90deg, #8aeaff, #83a3ff 33%, #fca6f3)',
+    gradBtn: 'linear-gradient(148deg, #37d7fa 0%, #4b72fe 40%, #ff8df2 68%, #ff8705 100%)',
+    ff: '"SF Mono","Fira Code","Roboto Mono",monospace',
+    cr: '12px', br: '20px', cs: 'none', cb: '1px solid #e7e7e7', ls: '-0.03em',
+  },
+  // ---- COHERE ----
+  cohereDark: {
+    name: 'Cohere Dark', g: 'cohere',
+    a: '#FF7759', al: '#FF9A85', nv: '#0a0a0a',
+    bg1: '#0a0a0a', bg2: '#141414', bgc: '#1a1a1a', bge: '#242424',
+    t1: '#FFFFFF', t2: '#a3a3a3', tm: '#737373',
+    ok: '#4ade80', err: '#f87171', wrn: '#fbbf24', inf: '#60a5fa',
+    bd: '#262626', bdl: '#3a3a3a', ma: null, lt: false,
+    ff: 'system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+    cr: '8px', br: '6px', cs: 'none', cb: '1px solid #262626', ls: 'normal',
+  },
+  cohereLight: {
+    name: 'Cohere Light', g: 'cohere',
+    a: '#FF7759', al: '#FF9A85', nv: '#FFFFFF',
+    bg1: '#FFFFFF', bg2: '#f5f5f5', bgc: '#FFFFFF', bge: '#f0f0f0',
+    t1: '#0a0a0a', t2: '#737373', tm: '#a3a3a3',
+    ok: '#16a34a', err: '#dc2626', wrn: '#d97706', inf: '#2563eb',
+    bd: '#e5e5e5', bdl: '#d4d4d4', ma: null, lt: true,
+    ff: 'system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif',
+    cr: '8px', br: '6px', cs: 'none', cb: '1px solid #e5e5e5', ls: 'normal',
+  },
+  // ---- OPENAI ----
+  openaiLight: {
+    name: 'OpenAI Light', g: 'openai',
+    a: '#000000', al: '#343541', nv: '#202123',
+    bg1: '#FFFFFF', bg2: '#f7f7f8', bgc: '#FFFFFF', bge: '#f7f7f8',
+    t1: '#202123', t2: '#6e6e80', tm: '#8e8ea0',
+    ok: '#10a37f', err: '#ef4146', wrn: '#f5a623', inf: '#10a37f',
+    bd: '#ececf1', bdl: '#d9d9e3', ma: '#10a37f', lt: true,
+    ff: '"Soehne","Helvetica Neue",Helvetica,Arial,sans-serif',
+    cr: '16px', br: '999px', cs: '0 2px 8px rgba(0,0,0,0.08)', cb: 'none', ls: '-0.01em',
+  },
+  openaiDark: {
+    name: 'OpenAI Dark', g: 'openai',
+    a: '#10a37f', al: '#1ac99a', nv: '#0d0d0d',
+    bg1: '#0d0d0d', bg2: '#171717', bgc: '#1e1e1e', bge: '#2a2a2a',
+    t1: '#ececec', t2: '#9b9b9b', tm: '#6b6b6b',
+    ok: '#10a37f', err: '#ef4146', wrn: '#f5a623', inf: '#10a37f',
+    bd: '#2f2f2f', bdl: '#404040', ma: null, lt: false,
+    ff: '"Soehne","Helvetica Neue",Helvetica,Arial,sans-serif',
+    cr: '16px', br: '999px', cs: '0 2px 8px rgba(255,255,255,0.04)', cb: 'none', ls: '-0.01em',
+  },
+};
+
+let active = 'current';
+
+function hex2rgba(h, a) {
+  return `rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;
+}
+
+function apply(k) {
+  active = k;
+  document.querySelectorAll('.palette-tab').forEach(t => t.classList.toggle('active', t.dataset.k === k));
+  const p = P[k];
+  // note
+  const notes = {
+    llama: 'LlamaIndex: White bg, monospace font, tight letter-spacing (-0.03em), vibrant gradient accents (cyan/blue/pink/orange), black pill buttons, 12px radius, no shadows.',
+    cohere: 'Cohere: Flat and minimal, system-ui font, coral #FF7759 accent, no gradients or shadows, 8px card radius, 6px button radius, neutral grays.',
+    openai: 'OpenAI: Ultra-minimal, pill buttons (999px radius), #10A37F green for positive states, soft card shadows, no card borders, 16px radius, generous spacing.',
+  };
+  document.getElementById('note').innerHTML = notes[p.g] ? `<div class="brand-note">${notes[p.g]}</div>` : '';
+  // swatches
+  const sw = document.getElementById('swatches');
+  const gs = [
+    { l:'Brand', c:[...(p.grad?[{h:null,gr:p.grad,n:'Gradient'}]:[]),{h:p.a,n:'Accent'},{h:p.al,n:'Accent Lt'},...(p.ma?[{h:p.ma,n:'Secondary'}]:[]) ]},
+    { l:'Backgrounds', c:[{h:p.bg1,n:'Primary'},{h:p.bg2,n:'Secondary'},{h:p.bgc,n:'Card'},{h:p.bge,n:'Elevated'}]},
+    { l:'Text', c:[{h:p.t1,n:'Primary'},{h:p.t2,n:'Secondary'},{h:p.tm,n:'Muted'}]},
+    { l:'Status', c:[{h:p.ok,n:'Success'},{h:p.err,n:'Error'},{h:p.wrn,n:'Warning'},{h:p.inf,n:'Info'}]},
+  ];
+  sw.innerHTML = gs.map(g=>`<div class="comparison-group"><div class="comparison-label">${g.l}</div><div class="comparison-colors">${g.c.map(c=>{
+    const bg=c.gr?c.gr:c.h; const edge=(c.h==='#FFFFFF'||c.h==='#000000')?'border:1px solid #555':'border:1px solid rgba(255,255,255,0.1)';
+    return `<div class="comparison-dot" style="background:${bg};${edge}" title="${c.n}: ${c.h||'gradient'}"></div>`;
+  }).join('')}</div></div>`).join('');
+  render();
+}
+
+function initTabs() {
+  const c = document.getElementById('tabs');
+  const groups = [
+    { keys:['current','copper','sienna','midblue','teal','warmgray','earthtone','lightClean','lightWarm','lightCool','lightNavy'] },
+    { keys:['llamaindex'] },
+    { keys:['cohereDark','cohereLight'] },
+    { keys:['openaiLight','openaiDark'] },
+  ];
+  groups.forEach((g,i)=>{
+    if(i>0){ const s=document.createElement('div'); s.className='tab-sep'; c.appendChild(s); }
+    g.keys.forEach(k=>{
+      const p=P[k], t=document.createElement('div');
+      t.className='palette-tab'+(k===active?' active':''); t.dataset.k=k;
+      const dot = p.grad ? `background:${p.grad}` : `background:${p.a}`;
+      const bdr = (p.a==='#000000')?';border:1px solid #555':'';
+      t.innerHTML=`<span style="display:inline-block;width:10px;height:10px;border-radius:5px;${dot}${bdr};margin-right:6px;vertical-align:middle;"></span>${p.name}`;
+      t.onclick=()=>apply(k); c.appendChild(t);
+    });
+  });
+}
+
+function render() {
+  const p = P[active], g = document.getElementById('grid');
+  const lt = !!p.lt;
+  // Brand overrides
+  const ff = p.ff || '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+  const cr = p.cr || '14px', br = p.br || '10px', ls = p.ls || 'normal';
+  const cSh = p.cs || 'none', cBd = p.cb || `1px solid ${p.bd}`;
+  const card = `background:${p.bgc};border:${cBd};border-radius:${cr};box-shadow:${cSh};margin-bottom:10px;overflow:hidden;`;
+  const tOff = lt ? '#D1D5DB' : p.bdl;
+  // Tab bar
+  const tBg = p.nb ? p.nv : (lt ? p.bg2 : p.bg2);
+  const tBd = p.nb ? 'rgba(255,255,255,0.1)' : p.bd;
+  const tIn = p.nb ? 'rgba(255,255,255,0.45)' : p.tm;
+  const tAc = (p.g==='openai' && !lt) ? '#10a37f' : (p.g==='openai' ? p.t1 : p.a);
+  // Helpers
+  const badge = (c,l) => `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:${hex2rgba(c,lt?'0.1':'0.15')};color:${c};font-family:${ff};">${l}</span>`;
+  const tog = (on) => {
+    const bg = on ? ((p.g==='openai'&&!lt)?'#10a37f':(p.g==='openai'?'#000':p.a)) : tOff;
+    return `<div style="width:44px;height:24px;border-radius:12px;position:relative;flex-shrink:0;margin-left:12px;background:${bg};"><div style="width:20px;height:20px;border-radius:10px;background:#fff;position:absolute;top:2px;left:${on?'22':'2'}px;"></div></div>`;
+  };
+  // Real Ionicons SVG paths
+  const I = {
+    camera: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><circle cx="256" cy="272" r="64"/><path d="M432 144h-59c-3 0-6.72-1.94-9.62-5l-25.94-40.94a15.52 15.52 0 00-1.37-1.85C327.11 85.76 315 80 302 80h-92c-13 0-25.11 5.76-34.07 16.21a15.52 15.52 0 00-1.37 1.85l-25.94 41c-2.22 2.42-5.34 5-8.62 5v-8a16 16 0 00-16-16h-24a16 16 0 00-16 16v8h-4a48.05 48.05 0 00-48 48V384a48.05 48.05 0 0048 48h352a48.05 48.05 0 0048-48V192a48.05 48.05 0 00-48-48zM256 368a96 96 0 1196-96 96.11 96.11 0 01-96 96z"/></svg>`,
+    settings: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><circle cx="256" cy="256" r="48"/><path d="M470.39 300l-.47-.38-31.56-24.75a16.11 16.11 0 01-6.1-13.33v-11.56a16 16 0 016.11-13.22L469.92 212l.47-.38a26.68 26.68 0 005.9-34.06l-42.71-73.9a1.59 1.59 0 01-.13-.22A26.86 26.86 0 00401 92.14l-.35.13-37.1 14.93a15.94 15.94 0 01-14.47-1.29q-4.92-3.1-10-5.86a15.94 15.94 0 01-8.19-11.82l-5.59-39.59-.12-.72A27.22 27.22 0 00298.76 26h-85.52a26.92 26.92 0 00-26.45 22.39l-.09.56-5.57 39.67a16 16 0 01-8.13 11.82 175.21 175.21 0 00-10 5.82 15.92 15.92 0 01-14.43 1.27l-37.13-15-.35-.14a26.87 26.87 0 00-32.48 11.34l-.13.22-42.77 73.95a26.71 26.71 0 005.9 34.1l.47.38 31.56 24.75a16.11 16.11 0 016.1 13.33v11.56a16 16 0 01-6.11 13.22L42.08 300l-.47.38a26.68 26.68 0 00-5.9 34.06l42.71 73.9a1.59 1.59 0 01.13.22 26.86 26.86 0 0032.45 11.3l.35-.13 37.07-14.93a15.94 15.94 0 0114.47 1.29q4.92 3.11 10 5.86a15.94 15.94 0 018.19 11.82l5.56 39.59.12.72A27.22 27.22 0 00213.24 486h85.52a26.92 26.92 0 0026.45-22.39l.09-.56 5.57-39.67a16 16 0 018.18-11.82c3.42-1.84 6.76-3.79 10-5.82a15.92 15.92 0 0114.43-1.27l37.13 14.95.35.14a26.85 26.85 0 0032.48-11.34 2.53 2.53 0 01.13-.22l42.71-73.89a26.7 26.7 0 00-5.89-34.11zm-134.48-40.24a80 80 0 11-83.66-83.67 80.21 80.21 0 0183.66 83.67z"/></svg>`,
+    cloudUpload: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M473.66 210c-14-10.38-31.2-18-49.36-22.11a16.11 16.11 0 01-12.19-12.22c-7.8-34.75-24.59-64.55-49.27-87.13C334.15 62.25 296.21 47.79 256 47.79c-35.35 0-68 11.08-94.37 32.05a150.07 150.07 0 00-42.06 53 16 16 0 01-11.31 8.87c-26.75 5.4-50.9 16.87-69.34 33.12C13.46 197.33 0 227.24 0 261.39c0 34.52 14.49 66 40.79 88.76 25.12 21.69 58.94 33.64 95.21 33.64h104V230.42l-36.69 36.69a16 16 0 01-23.16-.56c-5.8-6.37-5.24-16.3.85-22.39l63.69-63.68a16 16 0 0122.62 0L331 244.14c6.28 6.29 6.64 16.6.39 22.91a16 16 0 01-22.68.06L272 230.42v153.37h124c31.34 0 59.91-8.8 80.45-24.77 23.26-18.1 35.55-44 35.55-74.83 0-29.94-13.26-55.61-38.34-74.19zM240 448.21a16 16 0 1032 0v-64.42h-32z"/></svg>`,
+    docText: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M428 224H288a48 48 0 01-48-48V36a4 4 0 00-4-4h-92a64 64 0 00-64 64v320a64 64 0 0064 64h224a64 64 0 0064-64V228a4 4 0 00-4-4zm-92 160H176a16 16 0 010-32h160a16 16 0 010 32zm0-80H176a16 16 0 010-32h160a16 16 0 010 32z"/><path d="M419.22 188.59L275.41 44.78a2 2 0 00-3.41 1.41V176a16 16 0 0016 16h129.81a2 2 0 001.41-3.41z"/></svg>`,
+    folder: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M496 152a56 56 0 00-56-56H220.11a23.89 23.89 0 01-13.31-4L179 73.41A55.77 55.77 0 00147.89 64H72a56 56 0 00-56 56v48a8 8 0 008 8h464a8 8 0 008-8zM16 392a56 56 0 0056 56h368a56 56 0 0056-56V216a8 8 0 00-8-8H24a8 8 0 00-8 8z"/></svg>`,
+    chevFwd: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round" stroke-width="48"><path d="M184 112l144 144-144 144"/></svg>`,
+    chevBack: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round" stroke-width="48"><path d="M328 112L184 256l144 144"/></svg>`,
+    addCircle: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48zm80 224h-64v64a16 16 0 01-32 0v-64h-64a16 16 0 010-32h64v-64a16 16 0 0132 0v64h64a16 16 0 010 32z"/></svg>`,
+    checkCircle: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48zm108.25 138.29l-134.4 160a16 16 0 01-12 5.71h-.27a16 16 0 01-11.89-5.3l-57.6-64a16 16 0 1123.78-21.4l45.29 50.32 122.59-145.91a16 16 0 0124.5 20.58z"/></svg>`,
+    closeCircle: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48zm75.31 260.69a16 16 0 11-22.62 22.62L256 278.63l-52.69 52.68a16 16 0 01-22.62-22.62L233.37 256l-52.68-52.69a16 16 0 0122.62-22.62L256 233.37l52.69-52.68a16 16 0 0122.62 22.62L278.63 256z"/></svg>`,
+    star: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M394 480a16 16 0 01-9.39-3L256 383.76 127.39 477a16 16 0 01-24.55-18.08L153 310.35 23 221.2a16 16 0 019-29.2h160.38l48.4-148.95a16 16 0 0130.44 0l48.4 149H480a16 16 0 019.05 29.2L359 310.35l50.13 148.53A16 16 0 01394 480z"/></svg>`,
+    lock: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M368 192h-16v-80a96 96 0 10-192 0v80h-16a64.07 64.07 0 00-64 64v176a64.07 64.07 0 0064 64h224a64.07 64.07 0 0064-64V256a64.07 64.07 0 00-64-64zm-48 0H192v-80a64 64 0 11128 0z"/></svg>`,
+    flash: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M194.82 496a18.36 18.36 0 01-18.1-21.53v-.11L204.83 320H96a16 16 0 01-12.44-26.06L302.73 23a18.45 18.45 0 0132.8 13.71c0 .3-.08.59-.13.89L307.19 192H416a16 16 0 0112.44 26.06L209.24 489a18.45 18.45 0 01-14.42 7z"/></svg>`,
+    location: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><circle cx="256" cy="192" r="32"/><path d="M256 32c-88.22 0-160 68.65-160 153 0 40.17 18.31 93.59 54.42 158.78 29 52.34 62.55 99.67 80 123.22a31.75 31.75 0 0051.22 0c17.42-23.55 51-70.88 80-123.22C397.69 278.61 416 225.19 416 185c0-84.35-71.78-153-160-153zm0 224a64 64 0 1164-64 64.07 64.07 0 01-64 64z"/></svg>`,
+    time: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="none" stroke="${c}" stroke-width="32"><path d="M256 64C150 64 64 150 64 256s86 192 192 192 192-86 192-192S362 64 256 64z" stroke-miterlimit="10"/><path d="M256 128v144h96" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    alert: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}"><path d="M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48zm0 319.91a20 20 0 1120-20 20 20 0 01-20 20zm21.72-201.15l-5.74 122a16 16 0 01-32 0l-5.74-121.94v-.05a21.74 21.74 0 1143.44 0z"/></svg>`,
+    create: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M384 224v184a40 40 0 01-40 40H104a40 40 0 01-40-40V168a40 40 0 0140-40h167.48"/><path fill="${c}" d="M459.94 53.25a16.06 16.06 0 00-23.22-.56L424.35 65a8 8 0 000 11.31l11.34 11.32a8 8 0 0011.34 0l12.06-12c6.1-6.09 6.67-16.01.85-22.38zM399.34 90L218.82 270.2a9 9 0 00-2.31 3.93L208.16 299a3.91 3.91 0 004.86 4.86l24.85-8.35a9 9 0 003.93-2.31L422 112.66a9 9 0 000-12.66l-9.95-10a9 9 0 00-12.71 0z"/></svg>`,
+    camReverse: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M350.54 148.68l-26.62-42.06C318.31 100.08 310.62 96 302 96h-92c-8.62 0-16.31 4.08-21.92 10.62l-26.62 42.06C155.85 155.23 148.62 160 140 160H80a32 32 0 00-32 32v192a32 32 0 0032 32h352a32 32 0 0032-32V192a32 32 0 00-32-32h-59c-8.65 0-16.85-4.77-22.46-11.32z"/><path d="M124 158v-22h-24v22M335.76 285.22v-13.31a80 80 0 00-131-61.6M176 258.78v13.31a80 80 0 00130.73 61.8"/><path d="M196 272l-20-20-20 20M356 272l-20 20-20-20"/></svg>`,
+    qrCode: (c,s) => `<svg width="${s}" height="${s}" viewBox="0 0 512 512" fill="${c}" stroke="${c}"><rect x="336" y="336" width="80" height="80" rx="8" ry="8" stroke="none"/><rect x="272" y="272" width="64" height="64" rx="8" ry="8" stroke="none"/><rect x="416" y="416" width="64" height="64" rx="8" ry="8" stroke="none"/><rect x="432" y="272" width="48" height="48" rx="8" ry="8" stroke="none"/><rect x="272" y="432" width="48" height="48" rx="8" ry="8" stroke="none"/><rect x="336" y="96" width="80" height="80" rx="8" ry="8" stroke="none"/><rect x="288" y="48" width="176" height="176" rx="16" ry="16" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><rect x="96" y="96" width="80" height="80" rx="8" ry="8" stroke="none"/><rect x="48" y="48" width="176" height="176" rx="16" ry="16" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><rect x="96" y="336" width="80" height="80" rx="8" ry="8" stroke="none"/><rect x="48" y="288" width="176" height="176" rx="16" ry="16" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>`,
+  };
+  const ac = (p.g==='openai'&&!lt) ? '#10a37f' : (p.g==='openai'&&lt) ? p.t1 : p.a; // accent for icons
+  const th = (e) => `<div style="width:42px;height:42px;border-radius:6px;flex-shrink:0;background:${p.bge};display:flex;align-items:center;justify-content:center;font-size:18px;">${e}</div>`;
+  const sec = (t) => `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.tm};margin:14px 0 8px;padding:0 16px;font-family:${ff};">${t}</div>`;
+  const li_bd = `border-top:1px solid ${p.bd};`;
+  // Tab bar helper - activeIdx: 0=camera,1=uploads,2=profiles,3=settings
+  const tabBar = (activeIdx) => {
+    const tabs = [
+      {icon: I.camera, label: 'Camera'},
+      {icon: I.cloudUpload, label: 'Uploads'},
+      {icon: I.docText, label: 'Profiles'},
+      {icon: I.settings, label: 'Settings'},
+    ];
+    return `<div style="display:flex;justify-content:space-around;align-items:center;height:56px;border-top:1px solid ${tBd};background:${tBg};flex-shrink:0;">
+      ${tabs.map((t,i) => {
+        const c = i===activeIdx ? tAc : tIn;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:${c};font-family:${ff};">${t.icon(c, i===0?24:20)}${t.label}</div>`;
+      }).join('')}
+    </div>`;
+  };
+  // Login
+  let lgBg, lgBtnP, lgBtnS;
+  if (p.g==='llama') {
+    lgBg=`background:linear-gradient(180deg,#000 0%,#1f1f1f 100%);`; lgBtnP=`background:${p.gradBtn};color:#fff;border:none;border-radius:${br};`; lgBtnS=`background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:${br};`;
+  } else if (p.g==='cohere') {
+    lgBg = lt ? `background:linear-gradient(180deg,#fff 0%,#f5f5f5 100%);` : `background:linear-gradient(180deg,#0a0a0a 0%,#1a1a1a 100%);`;
+    lgBtnP=`background:${p.a};color:${lt?'#fff':'#000'};border:none;border-radius:${br};font-weight:600;`; lgBtnS=lt?`background:#f0f0f0;color:#0a0a0a;border:1px solid #e5e5e5;border-radius:${br};`:`background:#242424;color:#fff;border:1px solid #3a3a3a;border-radius:${br};`;
+  } else if (p.g==='openai') {
+    lgBg = lt ? `background:#fff;` : `background:linear-gradient(180deg,#0d0d0d 0%,#171717 100%);`;
+    lgBtnP = lt ? `background:#000;color:#fff;border:none;border-radius:${br};` : `background:#10a37f;color:#fff;border:none;border-radius:${br};`;
+    lgBtnS = lt ? `background:#f7f7f8;color:#202123;border:1px solid #ececf1;border-radius:${br};` : `background:#2a2a2a;color:#ececec;border:1px solid #404040;border-radius:${br};`;
+  } else {
+    lgBg=`background:linear-gradient(180deg,${p.nv} 0%,${lt?p.nv:p.bg1} 100%);`; lgBtnP=`background:${p.a};color:#fff;border:none;`; lgBtnS=`background:${p.bge};color:#fff;border:none;`;
+  }
+  const lgDark = (p.g==='openai'&&lt) ? false : (p.g==='cohere'&&lt) ? false : (p.g!=='openai'||!lt);
+  const lt1=lgDark?'#fff':p.t1, lt2=lgDark?'rgba(255,255,255,0.65)':p.t2, ltm=lgDark?'rgba(255,255,255,0.4)':p.tm;
+  // Primary/secondary button for content screens
+  const btnP = p.gradBtn ? `background:${p.gradBtn};color:#fff;` : `background:${(p.g==='openai'&&lt)?'#000':p.a};color:#fff;`;
+  const gradBar = p.grad ? `<div style="height:3px;background:${p.grad};"></div>` : '';
+  // Maintenance text color: in actual app it's textPrimary, not accent
+  const mntTxt = p.t1;
+
+  g.innerHTML = `
+  <!-- LOGIN -->
+  <div class="screen-wrapper"><div class="screen-label">Login</div>
+  <div class="phone" style="${lgBg}"><div class="notch"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;text-align:center;">
+    <div style="margin-bottom:16px;">${I.camera(ac,64)}</div>
+    <div style="font-size:36px;font-weight:700;color:${lt1};margin-top:16px;font-family:${ff};letter-spacing:${ls};">FieldCam</div>
+    <div style="font-size:16px;color:${lt2};margin-top:8px;margin-bottom:48px;font-family:${ff};">Capture. Process. Share.</div>
+    <div style="width:100%;margin-bottom:32px;">
+      <div style="display:flex;align-items:center;justify-content:center;padding:16px 24px;font-size:16px;font-weight:600;width:100%;min-height:48px;border-radius:10px;cursor:pointer;font-family:${ff};${lgBtnP}">Sign in with Google</div>
+      <div style="height:12px;"></div>
+      <div style="display:flex;align-items:center;justify-content:center;padding:16px 24px;font-size:16px;font-weight:600;width:100%;min-height:48px;border-radius:10px;cursor:pointer;font-family:${ff};${lgBtnS}">Sign in with Microsoft</div>
+      <div style="height:12px;"></div>
+      <div style="display:flex;align-items:center;justify-content:center;padding:16px 24px;font-size:16px;font-weight:600;width:100%;min-height:48px;border-radius:10px;cursor:pointer;font-family:${ff};${lgBtnS}">Sign in with Dropbox</div>
+    </div>
+    <div style="height:12px;"></div>
+    <div style="padding:16px 24px;font-size:16px;font-weight:600;color:${lgDark?p.al:(p.g==='openai'?'#10a37f':p.a)};cursor:pointer;font-family:${ff};">Skip Login (Dev Mode)</div>
+    <div style="font-size:12px;color:${ltm};margin-top:16px;line-height:18px;font-family:${ff};">By signing in, you agree to our Terms of Service and Privacy Policy.</div>
+  </div></div></div>
+
+  <!-- CAMERA -->
+  <div class="screen-wrapper"><div class="screen-label">Camera</div>
+  <div class="phone" style="background:#000;"><div class="notch"></div>
+  <div style="flex:1;background:#111;position:relative;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;z-index:2;">
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.4);border-radius:999px;padding:6px 12px;border:1px solid rgba(255,255,255,0.15);font-size:12px;font-weight:500;color:#fff;font-family:${ff};">
+        ${I.folder(ac,16)} <span style="margin-left:2px;">Field Photos</span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="width:34px;height:34px;border-radius:17px;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">${I.location(ac,18)}</div>
+        <div style="width:34px;height:34px;border-radius:17px;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">${I.flash('#fff',18)}</div>
+        <div style="width:34px;height:34px;border-radius:17px;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">${I.settings('#fff',18)}</div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:6px 16px;font-size:10px;font-weight:500;color:#22C55E;background:rgba(0,0,0,0.6);margin:4px 32px;border-radius:8px;z-index:2;font-family:${ff};">GPS: 40.7128, -74.0060 | 2026-03-22 14:32</div>
+    <div style="flex:1;position:relative;background:linear-gradient(135deg,#1a1a1a,#222);">
+      <div style="position:absolute;height:1px;width:100%;background:rgba(255,255,255,0.15);top:33%"></div>
+      <div style="position:absolute;height:1px;width:100%;background:rgba(255,255,255,0.15);top:66%"></div>
+      <div style="position:absolute;width:1px;height:100%;background:rgba(255,255,255,0.15);left:33%"></div>
+      <div style="position:absolute;width:1px;height:100%;background:rgba(255,255,255,0.15);left:66%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-around;align-items:center;padding:14px 20px 10px;z-index:2;background:rgba(0,0,0,0.4);">
+      <div style="width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;">${I.create(ac,22)}</div>
+      <div style="width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;">${I.qrCode(ac,22)}</div>
+      <div style="width:72px;height:72px;border-radius:36px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;">
+        <div style="width:56px;height:56px;border-radius:28px;background:#fff;"></div>
+      </div>
+      <div style="width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;">${I.camReverse('#fff',22)}</div>
+      <div style="width:34px;"></div>
+    </div>
+  </div></div></div>
+
+  <!-- UPLOADS -->
+  <div class="screen-wrapper"><div class="screen-label">Uploads</div>
+  <div class="phone" style="background:${p.bg1};font-family:${ff};"><div class="notch"></div>
+  <div class="sc">
+    ${sec('Upload Queue')}
+    ${['&#127749;IMG_4521.jpg|Mar 22, 2:31 PM|ok|Uploaded','&#127966;IMG_4522.jpg|Mar 22, 2:32 PM|inf|Uploading','&#127968;IMG_4523.jpg|Mar 22, 2:33 PM|wrn|Pending','&#128247;IMG_4524.jpg|Mar 22, 2:34 PM|err|Failed'].map((r,i)=>{
+      const [emoji,...rest]=r.split('|'); const fn=emoji.slice(emoji.indexOf('I')); const em=emoji.slice(0,emoji.indexOf('I'));
+      const dt=rest[0],sk=rest[1],sl=rest[2]; const sc=p[sk];
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;${i>0?li_bd:''}">
+        ${th(em)}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:500;color:${p.t1};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:${ff};letter-spacing:${ls};">${fn}</div>
+          <div style="font-size:11px;color:${p.t2};margin-top:1px;font-family:${ff};">${dt}</div>
+        </div>
+        ${badge(sc,sl)}
+      </div>`;
+    }).join('')}
+    <div style="padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:center;padding:14px 20px;font-size:16px;font-weight:600;width:100%;cursor:pointer;font-family:${ff};background:${p.bge};color:${p.t1};border-radius:${br};">View Previous Uploads</div>
+    </div>
+  </div>
+  ${tabBar(1)}</div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen-wrapper"><div class="screen-label">Settings</div>
+  <div class="phone" style="background:${p.bg1};font-family:${ff};"><div class="notch"></div>
+  <div class="sc">
+    ${sec('Account')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      <div style="font-size:16px;color:${p.t1};padding:16px;font-family:${ff};">user@example.com</div>
+      <div style="padding:0 16px 16px;">
+        <span style="font-size:16px;color:${p.err};font-family:${ff};cursor:pointer;">Sign Out</span>
+      </div>
+    </div>
+
+    ${sec('Upload')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      ${[['Upload Immediately','Upload photos as soon as they are taken',true],['Upload in Background','Continue uploading when app is in background',false],['Upload on Cellular','Use mobile data for uploads',false],['Save to Device','Save photos to your camera roll',true],['Save Original','Keep original uncompressed photo',false]].map((r,i)=>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i>0?li_bd:''}">
+          <div style="flex:1;margin-right:8px;">
+            <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">${r[0]}</div>
+            <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">${r[1]}</div>
+          </div>
+          ${tog(r[2])}
+        </div>`
+      ).join('')}
+    </div>
+
+    ${sec('Camera')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      ${[['Show Grid','Display composition grid overlay',true],['Level Indicator','Show horizon level indicator',false],['Prompt for Details','Ask for notes after each photo',false]].map((r,i)=>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i>0?li_bd:''}">
+          <div style="flex:1;margin-right:8px;">
+            <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">${r[0]}</div>
+            <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">${r[1]}</div>
+          </div>
+          ${tog(r[2])}
+        </div>`
+      ).join('')}
+    </div>
+
+    ${sec('Annotations')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      ${[['Include Location','Attach GPS coordinates to photos',true],['Include Timestamp','Attach date and time to photos',true]].map((r,i)=>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i>0?li_bd:''}">
+          <div style="flex:1;margin-right:8px;">
+            <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">${r[0]}</div>
+            <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">${r[1]}</div>
+          </div>
+          ${tog(r[2])}
+        </div>`
+      ).join('')}
+    </div>
+
+    ${sec('AI Processing')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;">
+        <div style="flex:1;margin-right:8px;">
+          <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Auto Process</div>
+          <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">Automatically process photos with default profile</div>
+        </div>
+        ${tog(false)}
+      </div>
+    </div>
+
+    ${sec('Maintenance')}
+    <div style="${card}padding:0;">
+      ${gradBar}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;${li_bd.replace('border-top','border-bottom')}">
+        <span style="font-size:16px;color:${mntTxt};font-family:${ff};">App Permissions</span>
+        ${I.chevFwd(p.tm,14)}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;">
+        <span style="font-size:16px;color:${mntTxt};font-family:${ff};">Clear Upload History</span>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:${p.tm};margin:24px 0;font-family:${ff};">FieldCam 1.0.0</div>
+  </div>
+  ${tabBar(3)}</div></div>
+
+  <!-- PROFILES -->
+  <div class="screen-wrapper"><div class="screen-label">Profiles</div>
+  <div class="phone" style="background:${p.bg1};font-family:${ff};"><div class="notch"></div>
+  <div class="sc">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.tm};font-family:${ff};">Processing Profiles</div>
+      <span style="cursor:pointer;">${I.addCircle(ac,26)}</span>
+    </div>
+    <div style="height:10px;"></div>
+    <div style="margin:0 16px;">
+    <div style="${card}padding:0;">
+      ${gradBar}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:${p.t1};display:flex;align-items:center;gap:6px;font-family:${ff};letter-spacing:${ls};">
+            Field Inspection
+            <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:${hex2rgba(p.inf,lt?'0.1':'0.2')};color:${p.inf};">TEAM</span>
+          </div>
+          <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">Analyze field photos for crop health</div>
+        </div>
+        ${tog(true)}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;${li_bd}">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Site Survey</div>
+          <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">Document construction site progress</div>
+        </div>
+        ${tog(false)}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;${li_bd}">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:${p.t1};display:flex;align-items:center;gap:6px;font-family:${ff};letter-spacing:${ls};">
+            Wildlife Log
+            <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:${hex2rgba(p.inf,lt?'0.1':'0.2')};color:${p.inf};">TEAM</span>
+            ${I.lock(p.tm,14)}
+          </div>
+          <div style="font-size:11px;color:${p.t2};margin-top:2px;font-family:${ff};">Identify and catalog wildlife sightings</div>
+        </div>
+        ${tog(false)}
+      </div>
+    </div></div>
+  </div>
+  ${tabBar(2)}</div></div>
+
+  <!-- FOLDER PICKER -->
+  <div class="screen-wrapper"><div class="screen-label">Folder Picker</div>
+  <div class="phone" style="background:${p.bg1};font-family:${ff};"><div class="notch"></div>
+  <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
+    ${I.chevBack(ac,18)}
+    <span style="font-size:16px;font-weight:600;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Select Folder</span>
+  </div>
+  <div class="sc">
+    ${sec('Current Upload Folder')}
+    <div style="${card}padding:14px;margin:0 16px 10px;">
+      ${gradBar}
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${I.folder(ac,28)}
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:600;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Field Photos</div>
+          <div style="font-size:11px;color:${p.t2};font-family:${ff};">Google Drive</div>
+        </div>
+        <span style="font-size:13px;color:${(p.g==='openai'&&!lt)?'#10a37f':p.a};font-weight:600;font-family:${ff};">Use</span>
+      </div>
+    </div>
+    <div style="padding:0 16px 10px;">
+      <div style="display:flex;align-items:center;justify-content:center;padding:14px 20px;font-size:16px;font-weight:600;cursor:pointer;font-family:${ff};background:${p.bge};color:${p.t1};border-radius:${br};${p.g==='openai'?`border:1px solid ${p.bd};`:''}">Choose Folder</div>
+    </div>
+    ${sec('Favorites')}
+    <div style="${card}padding:0;margin:0 16px 10px;">
+      ${gradBar}
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;">
+        ${I.star(p.wrn,16)}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Site Alpha</div>
+          <div style="font-size:11px;color:${p.t2};font-family:${ff};">Google Drive</div>
+        </div>
+        ${I.chevFwd(p.tm,14)}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;${li_bd}">
+        ${I.star(p.wrn,16)}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Spring 2026 Crops</div>
+          <div style="font-size:11px;color:${p.t2};font-family:${ff};">OneDrive</div>
+        </div>
+        ${I.chevFwd(p.tm,14)}
+      </div>
+    </div>
+    ${sec('Recent')}
+    <div style="${card}padding:0;margin:0 16px 10px;">
+      ${gradBar}
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;">
+        ${I.folder(p.tm,16)}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:500;color:${p.t1};font-family:${ff};letter-spacing:${ls};">West Fence Line</div>
+          <div style="font-size:11px;color:${p.t2};font-family:${ff};">Dropbox</div>
+        </div>
+        ${I.chevFwd(p.tm,14)}
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- QR SCANNER -->
+  <div class="screen-wrapper"><div class="screen-label">QR Scanner</div>
+  <div class="phone" style="background:#000;"><div class="notch"></div>
+  <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
+    ${I.chevBack(ac,18)}
+    <span style="font-size:16px;font-weight:600;color:#fff;font-family:${ff};letter-spacing:${ls};">Scan QR Code</span>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+    <div style="width:180px;height:180px;border:3px solid ${(p.g==='openai')?'#10a37f':p.a};border-radius:16px;"></div>
+    <div style="font-size:13px;color:#fff;background:rgba(0,0,0,0.6);padding:8px 16px;border-radius:999px;font-family:${ff};">Scanning for QR Codes...</div>
+  </div></div></div>
+
+  <!-- PERMISSIONS -->
+  <div class="screen-wrapper"><div class="screen-label">Permissions</div>
+  <div class="phone" style="background:${p.bg1};font-family:${ff};"><div class="notch"></div>
+  <div style="padding:8px 16px;display:flex;align-items:center;gap:8px;">
+    ${I.chevBack(ac,18)}
+    <span style="font-size:16px;font-weight:600;color:${p.t1};font-family:${ff};letter-spacing:${ls};">Permissions</span>
+  </div>
+  <div class="sc">
+    ${sec('Permissions')}
+    <div style="${card}padding:0;margin:0 16px 10px;">
+      ${gradBar}
+      ${[['Camera',true],['Fine Location',true],['Coarse Location',true],['Notifications',false]].map((r,i)=>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;${i>0?li_bd:''}">
+          <span style="font-size:14px;color:${p.t1};font-family:${ff};">${r[0]}</span>
+          ${r[1]?I.checkCircle(p.ok,20):I.closeCircle(p.err,20)}
+        </div>`
+      ).join('')}
+    </div>
+    <div style="padding:0 16px;">
+      <div style="display:flex;align-items:center;justify-content:center;padding:14px 20px;font-size:14px;font-weight:600;width:100%;cursor:pointer;font-family:${ff};letter-spacing:0.5px;${btnP}border:none;border-radius:${br};">REVIEW PERMISSIONS</div>
+    </div>
+  </div>
+  <div style="flex:1;"></div></div></div>
+  `;
+}
+
+initTabs();
+apply('current');
+</script>
+</body>
+</html>
