@@ -9,7 +9,7 @@ import type { FieldCamUser, AuthState, LinkedCloudAccount } from '../types/auth'
 GoogleSignin.configure({
   webClientId: '818851133596-gs1ior9a3jee6n05iqjiqb7ncqe08sqf.apps.googleusercontent.com',
   scopes: ['https://www.googleapis.com/auth/drive'],
-  offlineAccess: false,
+  offlineAccess: true,
 });
 
 interface AuthContextValue extends AuthState {

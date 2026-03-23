@@ -1,11 +1,11 @@
-export type DeliveryType = 'same_folder' | 'different_folder' | 'email' | 'both';
+export type DeliveryType = 'same_folder' | 'different_folder' | 'email';
 
 export interface ProcessingProfile {
   id: string;
   name: string;
   description: string | null;
   promptTemplate: string;
-  deliveryType: DeliveryType;
+  deliveryType: DeliveryType[];
   deliveryDestination: string | null;
   isActive: boolean;
   isTeam: boolean;

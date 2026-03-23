@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { Button } from '../src/components/ui/Button';
 import { Card } from '../src/components/ui/Card';
 import { SectionHeader } from '../src/components/ui/SectionHeader';
-import { colors } from '../src/theme/colors';
+import { useThemeColors } from '../src/context/ThemeContext';
 import { typography } from '../src/theme/typography';
 import { spacing } from '../src/theme/spacing';
 
@@ -25,6 +25,44 @@ export default function PermissionsScreen() {
     coarseLocation: null,
     notifications: null,
   });
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xl,
+    },
+    card: {
+      marginHorizontal: spacing.md,
+      padding: 0,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    rowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    rowLabel: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    buttonContainer: {
+      marginHorizontal: spacing.md,
+      marginTop: spacing.lg,
+    },
+  }), [colors]);
 
   const checkPermissions = useCallback(async () => {
     const fgLocation = await Location.getForegroundPermissionsAsync();
@@ -33,7 +71,7 @@ export default function PermissionsScreen() {
       camera: cameraPermission?.granted ?? false,
       fineLocation: fgLocation.granted,
       coarseLocation: fgLocation.granted,
-      notifications: false, // Notifications check not available in Expo Go
+      notifications: false,
     });
   }, [cameraPermission]);
 
@@ -91,40 +129,3 @@ export default function PermissionsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  card: {
-    marginHorizontal: spacing.md,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  rowLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  buttonContainer: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.lg,
-  },
-});

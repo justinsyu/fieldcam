@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../context/ThemeContext';
 import { spacing } from '../../theme/spacing';
 
 interface CameraControlsProps {
@@ -13,6 +13,9 @@ interface CameraControlsProps {
   onAnnotationToggle: () => void;
 }
 
+const SHUTTER_SIZE = 72;
+const SHUTTER_INNER_SIZE = 56;
+
 export function CameraControls({
   onCapture,
   onFlipCamera,
@@ -21,6 +24,44 @@ export function CameraControls({
   annotationsEnabled,
   onAnnotationToggle,
 }: CameraControlsProps) {
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.xl,
+    },
+    sideButton: {
+      width: 48,
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shutter: {
+      width: SHUTTER_SIZE,
+      height: SHUTTER_SIZE,
+      borderRadius: SHUTTER_SIZE / 2,
+      borderWidth: 3,
+      borderColor: colors.white,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shutterCapturing: {
+      borderColor: colors.orange,
+    },
+    shutterInner: {
+      width: SHUTTER_INNER_SIZE,
+      height: SHUTTER_INNER_SIZE,
+      borderRadius: SHUTTER_INNER_SIZE / 2,
+      backgroundColor: colors.white,
+    },
+  }), [colors]);
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -61,42 +102,3 @@ export function CameraControls({
     </View>
   );
 }
-
-const SHUTTER_SIZE = 72;
-const SHUTTER_INNER_SIZE = 56;
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  sideButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutter: {
-    width: SHUTTER_SIZE,
-    height: SHUTTER_SIZE,
-    borderRadius: SHUTTER_SIZE / 2,
-    borderWidth: 3,
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterCapturing: {
-    borderColor: colors.orange,
-  },
-  shutterInner: {
-    width: SHUTTER_INNER_SIZE,
-    height: SHUTTER_INNER_SIZE,
-    borderRadius: SHUTTER_INNER_SIZE / 2,
-    backgroundColor: colors.white,
-  },
-});

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 
@@ -13,6 +13,30 @@ interface FolderListItemProps {
 }
 
 export function FolderListItem({ name, onPress, onLongPress, isSelected }: FolderListItemProps) {
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    folderIcon: {
+      marginRight: spacing.sm,
+    },
+    name: {
+      ...typography.body,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    nameSelected: {
+      color: colors.orange,
+    },
+  }), [colors]);
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -33,25 +57,3 @@ export function FolderListItem({ name, onPress, onLongPress, isSelected }: Folde
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  folderIcon: {
-    marginRight: spacing.sm,
-  },
-  name: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  nameSelected: {
-    color: colors.orange,
-  },
-});

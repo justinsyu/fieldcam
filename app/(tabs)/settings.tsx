@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SectionHeader, Toggle, Card } from '../../src/components/ui';
@@ -8,7 +9,8 @@ import { useAuth } from '../../src/context/AuthContext';
 import { uploadQueue } from '../../src/services/uploadQueue';
 import { secureStorage } from '../../src/services/secureStorage';
 import type { CloudProvider, LinkedCloudAccount } from '../../src/types/auth';
-import { colors } from '../../src/theme/colors';
+import { useThemeColors } from '../../src/context/ThemeContext';
+import { ThemePicker } from '../../src/components/settings/ThemePicker';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 
@@ -16,6 +18,108 @@ export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
   const { user, signOut, deleteAccount, linkedAccounts, refreshLinkedAccounts } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xl,
+    },
+    screenTitle: {
+      ...typography.h1,
+      color: colors.textPrimary,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xs,
+    },
+    card: {
+      marginHorizontal: spacing.md,
+      padding: 0,
+      overflow: 'hidden',
+    },
+    emailText: {
+      ...typography.body,
+      color: colors.textPrimary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    signOutButton: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+    },
+    signOutText: {
+      ...typography.body,
+      color: colors.error,
+    },
+    cloudRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    cloudRowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    cloudRowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    cloudRowInfo: {
+      marginLeft: spacing.sm,
+      flex: 1,
+    },
+    cloudLabel: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    cloudEmail: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    connectText: {
+      ...typography.body,
+      color: colors.orange,
+    },
+    disconnectText: {
+      ...typography.body,
+      color: colors.error,
+    },
+    maintenanceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    maintenanceRowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    maintenanceText: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    deleteText: {
+      color: colors.error,
+    },
+    versionContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+    },
+    versionText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+  }), [colors]);
 
   const handleClearHistory = () => {
     Alert.alert(
@@ -93,8 +197,9 @@ export default function SettingsScreen() {
   if (!settings) return null;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.screenTitle}>Settings</Text>
         <SectionHeader title="Account" />
         <Card style={styles.card}>
           <Text style={styles.emailText}>{user?.email ?? 'Not signed in'}</Text>
@@ -218,6 +323,10 @@ export default function SettingsScreen() {
           />
         </Card>
 
+        <View style={{ marginHorizontal: spacing.md, marginTop: spacing.md }}>
+          <ThemePicker />
+        </View>
+
         <SectionHeader title="Maintenance" />
         <Card style={styles.card}>
           <TouchableOpacity
@@ -239,100 +348,6 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>FieldCam 1.0.0</Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  card: {
-    marginHorizontal: spacing.md,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  emailText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  signOutButton: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  signOutText: {
-    ...typography.body,
-    color: colors.error,
-  },
-  cloudRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  cloudRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  cloudRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  cloudRowInfo: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  cloudLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  cloudEmail: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  connectText: {
-    ...typography.body,
-    color: colors.orange,
-  },
-  disconnectText: {
-    ...typography.body,
-    color: colors.error,
-  },
-  maintenanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  maintenanceRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  maintenanceText: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  deleteText: {
-    color: colors.error,
-  },
-  versionContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  versionText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-});

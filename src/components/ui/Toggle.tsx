@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 
@@ -13,6 +13,14 @@ interface ToggleProps {
 }
 
 export function Toggle({ label, value, onValueChange, description, testID }: ToggleProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.md, paddingHorizontal: spacing.md },
+    textContainer: { flex: 1, marginRight: spacing.md },
+    label: { ...typography.body, color: colors.textPrimary },
+    description: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  }), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
@@ -24,10 +32,3 @@ export function Toggle({ label, value, onValueChange, description, testID }: Tog
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.md, paddingHorizontal: spacing.md },
-  textContainer: { flex: 1, marginRight: spacing.md },
-  label: { ...typography.body, color: colors.textPrimary },
-  description: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
-});

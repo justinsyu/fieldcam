@@ -6,7 +6,7 @@ interface CreateParams {
   name: string;
   description?: string | null;
   promptTemplate: string;
-  deliveryType?: DeliveryType;
+  deliveryType?: DeliveryType[];
   deliveryDestination?: string | null;
   isActive?: boolean;
   isTeam?: boolean;
@@ -17,7 +17,7 @@ interface UpdateParams {
   name?: string;
   description?: string | null;
   promptTemplate?: string;
-  deliveryType?: DeliveryType;
+  deliveryType?: DeliveryType[];
   deliveryDestination?: string | null;
   isActive?: boolean;
   isTeam?: boolean;
@@ -44,7 +44,7 @@ function rowToProfile(row: DbRow): ProcessingProfile {
     name: row.name,
     description: row.description,
     promptTemplate: row.prompt_template,
-    deliveryType: row.delivery_type as DeliveryType,
+    deliveryType: (row.delivery_type || 'same_folder').split(',') as DeliveryType[],
     deliveryDestination: row.delivery_destination,
     isActive: row.is_active === 1,
     isTeam: row.is_team === 1,
@@ -59,7 +59,7 @@ export const profileService = {
     const db = await getDatabase();
     const id = Crypto.randomUUID();
     const now = new Date().toISOString();
-    const deliveryType = params.deliveryType ?? 'same_folder';
+    const deliveryType = (params.deliveryType ?? ['same_folder']).join(',');
     const isActive = params.isActive !== undefined ? (params.isActive ? 1 : 0) : 1;
     const isTeam = params.isTeam !== undefined ? (params.isTeam ? 1 : 0) : 0;
     const isLocked = params.isLocked !== undefined ? (params.isLocked ? 1 : 0) : 0;
@@ -79,7 +79,7 @@ export const profileService = {
       name: params.name,
       description: params.description ?? null,
       promptTemplate: params.promptTemplate,
-      deliveryType,
+      deliveryType: deliveryType.split(',') as DeliveryType[],
       deliveryDestination: params.deliveryDestination ?? null,
       isActive: isActive === 1,
       isTeam: isTeam === 1,
@@ -114,7 +114,7 @@ export const profileService = {
     if (params.name !== undefined) { setClauses.push('name = ?'); values.push(params.name); }
     if (params.description !== undefined) { setClauses.push('description = ?'); values.push(params.description); }
     if (params.promptTemplate !== undefined) { setClauses.push('prompt_template = ?'); values.push(params.promptTemplate); }
-    if (params.deliveryType !== undefined) { setClauses.push('delivery_type = ?'); values.push(params.deliveryType); }
+    if (params.deliveryType !== undefined) { setClauses.push('delivery_type = ?'); values.push(params.deliveryType.join(',')); }
     if (params.deliveryDestination !== undefined) { setClauses.push('delivery_destination = ?'); values.push(params.deliveryDestination); }
     if (params.isActive !== undefined) { setClauses.push('is_active = ?'); values.push(params.isActive ? 1 : 0); }
     if (params.isTeam !== undefined) { setClauses.push('is_team = ?'); values.push(params.isTeam ? 1 : 0); }

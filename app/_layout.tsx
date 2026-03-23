@@ -1,17 +1,17 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Redirect, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import '../src/db/init';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { UploadProvider } from '../src/context/UploadContext';
-import { colors } from '../src/theme';
+import { ThemeProvider, useThemeColors } from '../src/context/ThemeContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -47,28 +47,40 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <UploadProvider>
-        <RootLayoutNav />
-      </UploadProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UploadProvider>
+          <RootLayoutNav />
+        </UploadProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { isLoading, isAuthenticated } = useAuth();
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    loading: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.bgPrimary,
+    },
+  }), [colors]);
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgPrimary }}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.orange} />
       </View>
     );
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
@@ -77,9 +89,7 @@ function RootLayoutNav() {
           name="profile-editor"
           options={{
             presentation: 'modal',
-            title: 'Edit Profile',
-            headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.white,
+            headerShown: false,
           }}
         />
         <Stack.Screen
@@ -114,9 +124,16 @@ function RootLayoutNav() {
             headerTintColor: colors.white,
           }}
         />
+        <Stack.Screen
+          name="theme-editor"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
       <StatusBar style="light" />
-    </ThemeProvider>
+    </NavThemeProvider>
   );
 }

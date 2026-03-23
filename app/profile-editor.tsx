@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors } from '../src/theme/colors';
+import { useThemeColors } from '../src/context/ThemeContext';
 import { typography } from '../src/theme/typography';
 import { spacing, radius } from '../src/theme/spacing';
 import { profileService } from '../src/services/profileService';
@@ -22,13 +24,13 @@ const DELIVERY_OPTIONS: { label: string; value: DeliveryType }[] = [
   { label: 'Same Folder', value: 'same_folder' },
   { label: 'Different Folder', value: 'different_folder' },
   { label: 'Email', value: 'email' },
-  { label: 'Both', value: 'both' },
 ];
 
 export default function ProfileEditorScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const isEditing = Boolean(id);
+  const colors = useThemeColors();
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -36,9 +38,137 @@ export default function ProfileEditorScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [promptTemplate, setPromptTemplate] = useState('');
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>('same_folder');
+  const [deliveryTypes, setDeliveryTypes] = useState<DeliveryType[]>(['same_folder']);
   const [deliveryDestination, setDeliveryDestination] = useState('');
   const [isLocked, setIsLocked] = useState(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    backButton: {
+      padding: spacing.xs,
+    },
+    headerTitle: {
+      ...typography.h2,
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    keyboardAvoid: {
+      flex: 1,
+    },
+    container: {
+      flex: 1,
+    },
+    content: {
+      padding: spacing.md,
+      paddingBottom: spacing.xxl,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.bgPrimary,
+    },
+    field: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      ...typography.label,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    input: {
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.textPrimary,
+      ...typography.body,
+    },
+    multilineInput: {
+      minHeight: 140,
+      paddingTop: spacing.sm,
+    },
+    hint: {
+      ...typography.caption,
+      color: colors.textMuted,
+      marginTop: spacing.xs,
+    },
+    deliveryButtons: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    deliveryButton: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bgCard,
+    },
+    deliveryButtonActive: {
+      borderColor: colors.orange,
+      backgroundColor: colors.orange,
+    },
+    deliveryButtonText: {
+      ...typography.label,
+      color: colors.textSecondary,
+    },
+    deliveryButtonTextActive: {
+      color: colors.white,
+    },
+    saveButton: {
+      backgroundColor: colors.orange,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      marginTop: spacing.md,
+    },
+    saveButtonText: {
+      ...typography.button,
+      color: colors.white,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    deleteButton: {
+      marginTop: spacing.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButtonText: {
+      ...typography.button,
+      color: colors.error,
+    },
+    lockedBanner: {
+      marginTop: spacing.md,
+      backgroundColor: colors.bgElevated,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    lockedText: {
+      ...typography.bodySmall,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+  }), [colors]);
 
   useEffect(() => {
     if (!id) return;
@@ -50,7 +180,7 @@ export default function ProfileEditorScreen() {
           setName(profile.name);
           setDescription(profile.description ?? '');
           setPromptTemplate(profile.promptTemplate);
-          setDeliveryType(profile.deliveryType);
+          setDeliveryTypes(profile.deliveryType);
           setDeliveryDestination(profile.deliveryDestination ?? '');
           setIsLocked(profile.isLocked);
         }
@@ -74,13 +204,18 @@ export default function ProfileEditorScreen() {
 
     setSaving(true);
     try {
+      if (deliveryTypes.length === 0) {
+        Alert.alert('Validation Error', 'Please select at least one delivery type.');
+        setSaving(false);
+        return;
+      }
       const params = {
         name: name.trim(),
         description: description.trim() || null,
         promptTemplate: promptTemplate.trim(),
-        deliveryType,
+        deliveryType: deliveryTypes,
         deliveryDestination:
-          deliveryType === 'email' || deliveryType === 'both'
+          deliveryTypes.includes('email')
             ? deliveryDestination.trim() || null
             : null,
       };
@@ -123,7 +258,16 @@ export default function ProfileEditorScreen() {
     );
   };
 
-  const showEmailInput = deliveryType === 'email' || deliveryType === 'both';
+  const showEmailInput = deliveryTypes.includes('email');
+
+  const toggleDeliveryType = (value: DeliveryType) => {
+    if (isLocked) return;
+    setDeliveryTypes((prev) =>
+      prev.includes(value)
+        ? prev.filter((t) => t !== value)
+        : [...prev, value]
+    );
+  };
 
   if (loading) {
     return (
@@ -134,10 +278,17 @@ export default function ProfileEditorScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardAvoid}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Profile' : 'New Profile'}</Text>
+      </View>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -188,26 +339,29 @@ export default function ProfileEditorScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Delivery Type</Text>
           <View style={styles.deliveryButtons}>
-            {DELIVERY_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.deliveryButton,
-                  deliveryType === option.value && styles.deliveryButtonActive,
-                ]}
-                onPress={() => !isLocked && setDeliveryType(option.value)}
-                activeOpacity={0.7}
-              >
-                <Text
+            {DELIVERY_OPTIONS.map((option) => {
+              const isSelected = deliveryTypes.includes(option.value);
+              return (
+                <TouchableOpacity
+                  key={option.value}
                   style={[
-                    styles.deliveryButtonText,
-                    deliveryType === option.value && styles.deliveryButtonTextActive,
+                    styles.deliveryButton,
+                    isSelected && styles.deliveryButtonActive,
                   ]}
+                  onPress={() => toggleDeliveryType(option.value)}
+                  activeOpacity={0.7}
                 >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.deliveryButtonText,
+                      isSelected && styles.deliveryButtonTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -258,117 +412,7 @@ export default function ProfileEditorScreen() {
           </View>
         )}
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgPrimary,
-  },
-  field: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    ...typography.label,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.textPrimary,
-    ...typography.body,
-  },
-  multilineInput: {
-    minHeight: 140,
-    paddingTop: spacing.sm,
-  },
-  hint: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  deliveryButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  deliveryButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgCard,
-  },
-  deliveryButtonActive: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orange,
-  },
-  deliveryButtonText: {
-    ...typography.label,
-    color: colors.textSecondary,
-  },
-  deliveryButtonTextActive: {
-    color: colors.white,
-  },
-  saveButton: {
-    backgroundColor: colors.orange,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    marginTop: spacing.md,
-  },
-  saveButtonText: {
-    ...typography.button,
-    color: colors.white,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  deleteButton: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButtonText: {
-    ...typography.button,
-    color: colors.error,
-  },
-  lockedBanner: {
-    marginTop: spacing.md,
-    backgroundColor: colors.bgElevated,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  lockedText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});

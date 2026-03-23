@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { getProvider } from '../src/services/cloudStorage/registry';
 import { getValidAccessToken } from '../src/services/oauth/tokenRefresh';
 import { useAuth } from '../src/context/AuthContext';
 import type { CloudProvider } from '../src/types/auth';
-import { colors } from '../src/theme/colors';
+import { useThemeColors } from '../src/context/ThemeContext';
 import { typography } from '../src/theme/typography';
 import { spacing } from '../src/theme/spacing';
 
@@ -34,6 +34,7 @@ export default function FolderPickerScreen() {
   const [selectedProvider, setSelectedProvider] = useState<CloudProvider>(
     (linkedAccounts[0]?.provider as CloudProvider) ?? 'google'
   );
+  const colors = useThemeColors();
 
   const rootId = selectedProvider === 'dropbox' ? '' : 'root';
   const rootName = selectedProvider === 'google' ? 'My Drive'
@@ -50,6 +51,172 @@ export default function FolderPickerScreen() {
     loading: false,
     stack: [],
   });
+
+  const styles = useMemo(() => StyleSheet.create({
+    card: {
+      marginHorizontal: spacing.md,
+      padding: spacing.md,
+    },
+    listCard: {
+      marginHorizontal: spacing.md,
+      padding: 0,
+      overflow: 'hidden',
+    },
+    currentFolderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    folderIcon: {
+      marginRight: spacing.sm,
+    },
+    currentFolderInfo: {
+      flex: 1,
+    },
+    currentFolderName: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    currentFolderProvider: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textTransform: 'capitalize',
+    },
+    useText: {
+      ...typography.label,
+      color: colors.orange,
+    },
+    notSetText: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    chooseFolderContainer: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+    },
+    providerSelector: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.xs,
+    },
+    providerPill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: 16,
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    providerPillSelected: {
+      backgroundColor: colors.orange,
+      borderColor: colors.orange,
+    },
+    providerPillText: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    providerPillTextSelected: {
+      color: colors.white,
+    },
+    browserSection: {
+      marginHorizontal: spacing.md,
+      marginTop: spacing.md,
+      backgroundColor: colors.bgCard,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    browserHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: spacing.sm,
+    },
+    backText: {
+      ...typography.label,
+      color: colors.orange,
+    },
+    browserTitle: {
+      ...typography.label,
+      color: colors.textPrimary,
+      flex: 1,
+      textAlign: 'center',
+    },
+    browserHeaderActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerIconButton: {
+      marginLeft: spacing.sm,
+    },
+    newFolderIconWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    newFolderPlus: {
+      ...typography.label,
+      color: colors.textSecondary,
+      marginLeft: 2,
+      fontSize: 14,
+    },
+    sortRow: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      alignItems: 'flex-end',
+    },
+    sortLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontSize: 11,
+    },
+    loader: {
+      padding: spacing.xl,
+    },
+    emptyText: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: 'center',
+      padding: spacing.lg,
+    },
+    emptyStateText: {
+      ...typography.body,
+      color: colors.textMuted,
+      fontStyle: 'italic',
+      textAlign: 'center',
+      padding: spacing.lg,
+    },
+    takePhotosContainer: {
+      padding: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    takePhotosFab: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.orange,
+      borderRadius: 28,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+    },
+    fabIcon: {
+      marginRight: spacing.sm,
+    },
+    fabLabel: {
+      ...typography.label,
+      color: colors.white,
+      fontSize: 15,
+    },
+  }), [colors]);
 
   const loadData = useCallback(async () => {
     const [curr, favs, recs] = await Promise.all([
@@ -82,7 +249,6 @@ export default function FolderPickerScreen() {
         name: f.name,
         provider: selectedProvider,
       }));
-      // Sort alphabetically
       folderInfos.sort((a, b) => a.name.localeCompare(b.name));
       setBrowser((prev) => ({ ...prev, folders: folderInfos, loading: false }));
     } catch (e) {
@@ -148,7 +314,6 @@ export default function FolderPickerScreen() {
     router.back();
   }, []);
 
-  // Star/favorite toggle for the currently browsed folder
   const toggleFavoriteForBrowser = useCallback(async () => {
     const folder: FolderInfo = {
       id: browser.folderId,
@@ -168,7 +333,6 @@ export default function FolderPickerScreen() {
     (f) => f.id === browser.folderId && f.provider === selectedProvider
   );
 
-  // Create new subfolder in current browser location
   const createSubfolder = useCallback(async () => {
     let token: string;
     try {
@@ -185,7 +349,6 @@ export default function FolderPickerScreen() {
         try {
           const provider = getProvider(selectedProvider);
           await provider.createFolder(name.trim(), browser.folderId, token);
-          // Reload current folder contents
           loadFolders(browser.folderId);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -206,7 +369,6 @@ export default function FolderPickerScreen() {
 
   const renderBrowser = () => (
     <View style={styles.browserSection}>
-      {/* Browser header: back button, folder title, star, new-folder */}
       <View style={styles.browserHeader}>
         <TouchableOpacity
           onPress={goBack}
@@ -226,7 +388,6 @@ export default function FolderPickerScreen() {
         </Text>
 
         <View style={styles.browserHeaderActions}>
-          {/* Star/favorite button (only meaningful when not at root) */}
           {browser.folderId !== rootId && (
             <TouchableOpacity
               onPress={toggleFavoriteForBrowser}
@@ -241,7 +402,6 @@ export default function FolderPickerScreen() {
             </TouchableOpacity>
           )}
 
-          {/* New subfolder button */}
           <TouchableOpacity
             onPress={createSubfolder}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -255,7 +415,6 @@ export default function FolderPickerScreen() {
         </View>
       </View>
 
-      {/* Sort indicator */}
       <View style={styles.sortRow}>
         <Text style={styles.sortLabel}>A-Z</Text>
       </View>
@@ -281,7 +440,6 @@ export default function FolderPickerScreen() {
         />
       )}
 
-      {/* Take Photos Here FAB */}
       <View style={styles.takePhotosContainer}>
         <TouchableOpacity style={styles.takePhotosFab} onPress={takePhotosHere} activeOpacity={0.8}>
           <Ionicons name="camera" size={20} color={colors.white} style={styles.fabIcon} />
@@ -343,7 +501,6 @@ export default function FolderPickerScreen() {
 
       {browserVisible && renderBrowser()}
 
-      {/* Favorites section - always shown (empty state when no favorites) */}
       <SectionHeader title="Favorites" />
       <Card style={styles.listCard}>
         {favorites.length > 0 ? (
@@ -364,7 +521,6 @@ export default function FolderPickerScreen() {
         )}
       </Card>
 
-      {/* Recents section - always shown (empty state when no recents) */}
       <SectionHeader title="Recent" />
       <Card style={styles.listCard}>
         {recents.length > 0 ? (
@@ -397,169 +553,3 @@ export default function FolderPickerScreen() {
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: spacing.md,
-    padding: spacing.md,
-  },
-  listCard: {
-    marginHorizontal: spacing.md,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  currentFolderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  folderIcon: {
-    marginRight: spacing.sm,
-  },
-  currentFolderInfo: {
-    flex: 1,
-  },
-  currentFolderName: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  currentFolderProvider: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textTransform: 'capitalize',
-  },
-  useText: {
-    ...typography.label,
-    color: colors.orange,
-  },
-  notSetText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  chooseFolderContainer: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-  },
-  providerSelector: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-  },
-  providerPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 16,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  providerPillSelected: {
-    backgroundColor: colors.orange,
-    borderColor: colors.orange,
-  },
-  providerPillText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  providerPillTextSelected: {
-    color: colors.white,
-  },
-  browserSection: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  browserHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  backText: {
-    ...typography.label,
-    color: colors.orange,
-  },
-  browserTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  browserHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIconButton: {
-    marginLeft: spacing.sm,
-  },
-  newFolderIconWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  newFolderPlus: {
-    ...typography.label,
-    color: colors.textSecondary,
-    marginLeft: 2,
-    fontSize: 14,
-  },
-  sortRow: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    alignItems: 'flex-end',
-  },
-  sortLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-  loader: {
-    padding: spacing.xl,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    padding: spacing.lg,
-  },
-  emptyStateText: {
-    ...typography.body,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    padding: spacing.lg,
-  },
-  takePhotosContainer: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  takePhotosFab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.orange,
-    borderRadius: 28,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  fabIcon: {
-    marginRight: spacing.sm,
-  },
-  fabLabel: {
-    ...typography.label,
-    color: colors.white,
-    fontSize: 15,
-  },
-});

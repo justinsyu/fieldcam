@@ -1,18 +1,25 @@
-import { Link, Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { useAuth } from '../src/context/AuthContext';
 
 export default function NotFoundScreen() {
+  const { isAuthenticated } = useAuth();
+
+  // After OAuth redirects, the app may land on an unrecognized route.
+  // Redirect authenticated users to the main app.
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)/camera" />;
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <View style={styles.container}>
         <Text style={styles.title}>This screen doesn't exist.</Text>
 
-        <Link href={"/" as any} style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
-        </Link>
+        <Redirect href="/(auth)/login" />
       </View>
     </>
   );
@@ -28,13 +35,5 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2e78b7',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { CameraTopBar } from '../../src/components/camera/CameraTopBar';
@@ -6,7 +6,7 @@ import { CameraControls } from '../../src/components/camera/CameraControls';
 import { CameraSettingsSheet } from '../../src/components/camera/CameraSettingsSheet';
 import { useCamera } from '../../src/hooks/useCamera';
 import { useSettings } from '../../src/hooks/useSettings';
-import { colors } from '../../src/theme/colors';
+import { useThemeColors } from '../../src/context/ThemeContext';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 import { Button } from '../../src/components/ui';
@@ -23,6 +23,7 @@ export default function CameraScreen() {
   const { refresh } = useUploads();
   const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
   const { settings, updateSetting } = useSettings();
+  const colors = useThemeColors();
 
   const [locationEnabled, setLocationEnabled] = useState<boolean>(
     () => settings?.annotationLocation ?? true
@@ -30,6 +31,64 @@ export default function CameraScreen() {
   const [annotationsEnabled, setAnnotationsEnabled] = useState<boolean>(
     () => (settings?.annotationLocation ?? true) || (settings?.annotationTimestamp ?? true)
   );
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.black,
+    },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'space-between',
+    },
+    spacer: {
+      flex: 1,
+    },
+    annotationBanner: {
+      alignSelf: 'center',
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 4,
+      marginTop: spacing.xs,
+    },
+    annotationBannerText: {
+      ...typography.label,
+      color: colors.success,
+      fontSize: 12,
+      letterSpacing: 0.5,
+    },
+    gridOverlay: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    gridLineV: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      width: StyleSheet.hairlineWidth,
+      backgroundColor: 'rgba(255,255,255,0.4)',
+    },
+    gridLineH: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: 'rgba(255,255,255,0.4)',
+    },
+    permissionContainer: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    permissionText: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+  }), [colors]);
 
   useFocusEffect(
     useCallback(() => {
@@ -140,61 +199,3 @@ export default function CameraScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  spacer: {
-    flex: 1,
-  },
-  annotationBanner: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    marginTop: spacing.xs,
-  },
-  annotationBannerText: {
-    ...typography.label,
-    color: colors.success,
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  gridLineV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  gridLineH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  permissionContainer: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  permissionText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-});

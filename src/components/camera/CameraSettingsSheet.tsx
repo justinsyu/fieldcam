@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Toggle } from '../ui/Toggle';
-import { colors } from '../../theme/colors';
+import { useThemeColors } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
 import { spacing, radius } from '../../theme/spacing';
 import type { AppSettings } from '../../services/settingsService';
@@ -28,6 +28,54 @@ export function CameraSettingsSheet({
   settings,
   onUpdateSetting,
 }: CameraSettingsSheetProps) {
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    sheet: {
+      backgroundColor: colors.bgCard,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      paddingTop: spacing.sm,
+    },
+    dragHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: radius.full,
+      backgroundColor: colors.textMuted,
+      alignSelf: 'center',
+      marginBottom: spacing.md,
+    },
+    title: {
+      ...typography.h3,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      paddingBottom: spacing.md,
+      paddingHorizontal: spacing.md,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+    },
+    rowLabel: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    bottomPad: {
+      height: spacing.xl,
+    },
+  }), [colors]);
+
   const handleAnnotationSettings = () => {
     console.log('Navigate to annotation settings');
   };
@@ -104,49 +152,3 @@ export function CameraSettingsSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  sheet: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingTop: spacing.sm,
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.textMuted,
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  rowLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  bottomPad: {
-    height: spacing.xl,
-  },
-});

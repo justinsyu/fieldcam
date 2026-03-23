@@ -1,17 +1,64 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { parseFieldCamQR, qrToFolderInfo } from '../src/services/qrCodeService';
 import { folderService } from '../src/services/folderService';
 import { Button } from '../src/components/ui';
-import { colors } from '../src/theme/colors';
+import { useThemeColors } from '../src/context/ThemeContext';
 import { typography } from '../src/theme/typography';
 import { spacing } from '../src/theme/spacing';
 
 export default function QRScannerScreen() {
   const [scanned, setScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.black,
+    },
+    camera: {
+      flex: 1,
+    },
+    overlay: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scanFrame: {
+      width: 240,
+      height: 240,
+      borderWidth: 2,
+      borderColor: colors.orange,
+      borderRadius: 16,
+      backgroundColor: 'transparent',
+      marginBottom: spacing.xl,
+    },
+    overlayText: {
+      ...typography.body,
+      color: colors.white,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: 20,
+      overflow: 'hidden',
+    },
+    permissionContainer: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    permissionText: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+  }), [colors]);
 
   const handleBarcodeScanned = useCallback(
     async ({ data }: { data: string }) => {
@@ -66,49 +113,3 @@ export default function QRScannerScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scanFrame: {
-    width: 240,
-    height: 240,
-    borderWidth: 2,
-    borderColor: colors.orange,
-    borderRadius: 16,
-    backgroundColor: 'transparent',
-    marginBottom: spacing.xl,
-  },
-  overlayText: {
-    ...typography.body,
-    color: colors.white,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  permissionContainer: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  permissionText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-});

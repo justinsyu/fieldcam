@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { FlatList, View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { uploadQueue } from '../src/services/uploadQueue';
-import { colors } from '../src/theme/colors';
+import { useThemeColors } from '../src/context/ThemeContext';
 import { typography } from '../src/theme/typography';
 import { spacing, radius } from '../src/theme/spacing';
 import type { UploadItem } from '../src/types/upload';
@@ -15,6 +15,7 @@ const PROVIDER_ICONS: Record<CloudProvider, keyof typeof Ionicons.glyphMap> = {
 };
 
 function HistoryListItem({ item }: { item: UploadItem }) {
+  const colors = useThemeColors();
   const providerIcon = PROVIDER_ICONS[item.provider] ?? 'cloud-outline';
   const uploadDate = item.uploadedAt
     ? new Date(item.uploadedAt).toLocaleDateString(undefined, {
@@ -29,6 +30,39 @@ function HistoryListItem({ item }: { item: UploadItem }) {
         year: 'numeric',
       })
     : '';
+
+  const styles = useMemo(() => StyleSheet.create({
+    item: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.bgCard,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginHorizontal: spacing.md,
+      marginVertical: spacing.xs,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    thumbnail: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.sm,
+      backgroundColor: colors.bgElevated,
+    },
+    info: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    fileName: {
+      ...typography.label,
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    date: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+  }), [colors]);
 
   return (
     <View style={styles.item}>
@@ -45,6 +79,20 @@ function HistoryListItem({ item }: { item: UploadItem }) {
 }
 
 function EmptyHistory() {
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyText: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+  }), [colors]);
+
   return (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>No items found</Text>
@@ -54,6 +102,17 @@ function EmptyHistory() {
 
 export default function UploadHistoryScreen() {
   const [items, setItems] = useState<UploadItem[]>([]);
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+    },
+    listContent: {
+      paddingVertical: spacing.sm,
+    },
+  }), [colors]);
 
   const loadHistory = useCallback(async () => {
     const all = await uploadQueue.getAll();
@@ -83,52 +142,3 @@ export default function UploadHistoryScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  listContent: {
-    paddingVertical: spacing.sm,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginHorizontal: spacing.md,
-    marginVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  thumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.sm,
-    backgroundColor: colors.bgElevated,
-  },
-  info: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  fileName: {
-    ...typography.label,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  date: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-});

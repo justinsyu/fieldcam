@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { FlatList, View, StyleSheet } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { FlatList, View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SectionHeader } from '../../src/components/ui/SectionHeader';
 import { Button } from '../../src/components/ui/Button';
-import { colors } from '../../src/theme/colors';
+import { useThemeColors } from '../../src/context/ThemeContext';
 import { spacing } from '../../src/theme/spacing';
 import { UploadListItem } from '../../src/components/uploads/UploadListItem';
 import { EmptyUploads } from '../../src/components/uploads/EmptyUploads';
@@ -15,6 +16,26 @@ export default function UploadsScreen() {
   const { items, refresh } = useUploads();
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  const colors = useThemeColors();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgPrimary,
+    },
+    screenTitle: {
+      fontSize: 28,
+      fontWeight: '700' as const,
+      color: colors.textPrimary,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xs,
+    },
+    historyButtonContainer: {
+      marginHorizontal: spacing.md,
+      marginVertical: spacing.md,
+    },
+  }), [colors]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -37,7 +58,8 @@ export default function UploadsScreen() {
   const keyExtractor = useCallback((item: UploadItem) => item.id, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Text style={styles.screenTitle}>Uploads</Text>
       <SectionHeader title="Upload Queue" />
       <FlatList
         data={items}
@@ -68,17 +90,6 @@ export default function UploadsScreen() {
           />
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgPrimary,
-  },
-  historyButtonContainer: {
-    marginHorizontal: spacing.md,
-    marginVertical: spacing.md,
-  },
-});
