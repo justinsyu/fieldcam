@@ -7,7 +7,7 @@ import type { FieldCamUser, AuthState, LinkedCloudAccount } from '../types/auth'
 
 // Configure Google Sign-In with Drive scope
 GoogleSignin.configure({
-  webClientId: '__GOOGLE_WEB_CLIENT_ID__',
+  webClientId: '818851133596-gs1ior9a3jee6n05iqjiqb7ncqe08sqf.apps.googleusercontent.com',
   scopes: ['https://www.googleapis.com/auth/drive'],
   offlineAccess: false,
 });

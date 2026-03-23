@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fieldcam",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -44,7 +44,8 @@
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       ["expo-build-properties", {
-        "ios": { "useFrameworks": "static" }
+        "ios": { "useFrameworks": "static" },
+        "android": { "newArchEnabled": false }
       }]
     ],
     "experiments": {

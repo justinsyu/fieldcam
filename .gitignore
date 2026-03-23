@@ -42,3 +42,9 @@ yarn-error.*
 
 # reference files (APK, screenshots - not needed in repo)
 /_reference/
+
+# superpowers brainstorm sessions
+.superpowers/
+
+# IDE
+.vscode/

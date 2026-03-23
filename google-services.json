@@ -1,5 +1,54 @@
 {
-  "_comment": "REPLACE with real google-services.json from Firebase Console",
-  "project_info": { "project_number": "000000000000", "project_id": "fieldcam-placeholder" },
-  "client": []
+  "project_info": {
+    "project_number": "818851133596",
+    "project_id": "fieldcam-2a659",
+    "storage_bucket": "fieldcam-2a659.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818851133596:android:85cbaaafe4fa2a94109559",
+        "android_client_info": {
+          "package_name": "com.fieldcam.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "818851133596-s2tvs0jfhrfpn3gk5cdllvhaa7u6k3fa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fieldcam.app",
+            "certificate_hash": "26a6144a53250e7a1af29acf0410d2be968c696e"
+          }
+        },
+        {
+          "client_id": "818851133596-gs1ior9a3jee6n05iqjiqb7ncqe08sqf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-_fOPngLNrTNho4PWgMAOHA3i0tgJUGQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "818851133596-gs1ior9a3jee6n05iqjiqb7ncqe08sqf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "818851133596-7br6u1t6q7icm2bo2hpguqakt8fgjpot.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fieldcam.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
 }
