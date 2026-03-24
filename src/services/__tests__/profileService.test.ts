@@ -37,7 +37,7 @@ describe('profileService', () => {
         name: 'Test Profile',
         description: 'A test profile',
         promptTemplate: 'Summarize: {{extracted_text}}',
-        deliveryType: 'same_folder',
+        deliveryType: ['same_folder'],
       });
 
       expect(mockDb.runAsync).toHaveBeenCalledTimes(1);
@@ -49,7 +49,7 @@ describe('profileService', () => {
       expect(profile.name).toBe('Test Profile');
       expect(profile.description).toBe('A test profile');
       expect(profile.promptTemplate).toBe('Summarize: {{extracted_text}}');
-      expect(profile.deliveryType).toBe('same_folder');
+      expect(profile.deliveryType).toEqual(['same_folder']);
       expect(profile.isActive).toBe(true);
       expect(profile.isTeam).toBe(false);
       expect(profile.isLocked).toBe(false);
@@ -115,7 +115,7 @@ describe('profileService', () => {
       expect(profiles[0].id).toBe('profile-row-1');
       expect(profiles[0].name).toBe('My Profile');
       expect(profiles[0].promptTemplate).toBe('Do something: {{extracted_text}}');
-      expect(profiles[0].deliveryType).toBe('email');
+      expect(profiles[0].deliveryType).toEqual(['email']);
       expect(profiles[0].deliveryDestination).toBe('user@example.com');
       expect(profiles[0].isActive).toBe(true);
       expect(profiles[0].isTeam).toBe(false);

@@ -87,8 +87,9 @@ export const uploadQueue = {
 
   async getPending(): Promise<UploadItem[]> {
     const db = await getDatabase();
+    // Include 'uploading' items that may be stuck from a previous crashed session
     const rows = await db.getAllAsync<DbRow>(
-      `SELECT * FROM upload_queue WHERE status IN ('pending', 'failed') AND retry_count < 5 ORDER BY created_at ASC`
+      `SELECT * FROM upload_queue WHERE status IN ('pending', 'failed', 'uploading') AND retry_count < 5 ORDER BY created_at ASC`
     );
     return rows.map(rowToUploadItem);
   },
@@ -131,6 +132,14 @@ export const uploadQueue = {
   async clearHistory(): Promise<void> {
     const db = await getDatabase();
     await db.runAsync(`DELETE FROM upload_queue WHERE status = 'completed'`);
+  },
+
+  async resetForRetry(id: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync(
+      `UPDATE upload_queue SET status = 'pending', retry_count = 0, error = NULL WHERE id = ?`,
+      [id]
+    );
   },
 
   async deleteItem(id: string): Promise<void> {

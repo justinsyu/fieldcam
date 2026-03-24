@@ -75,7 +75,7 @@ describe('uploadQueue', () => {
     const items = await uploadQueue.getPending();
 
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-      expect.stringContaining("status IN ('pending', 'failed')")
+      expect.stringContaining("status IN ('pending', 'failed', 'uploading')")
     );
     expect(items).toHaveLength(1);
     expect(items[0].id).toBe('row-1');

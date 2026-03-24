@@ -45,8 +45,14 @@ export function CameraTopBar({
       borderWidth: 1,
       borderRadius: 20,
       paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingVertical: 6,
       alignSelf: 'center',
+      backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    folderPillNotSet: {
+      borderColor: colors.orange,
+      borderWidth: 1.5,
+      backgroundColor: 'rgba(255,149,0,0.25)',
     },
     folderIcon: {
       marginRight: spacing.xs,
@@ -67,9 +73,14 @@ export function CameraTopBar({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.folderPill} onPress={onFolderPress} activeOpacity={onFolderPress ? 0.7 : 1}>
-        <Ionicons name="folder" size={16} color={colors.white} style={styles.folderIcon} />
+      <TouchableOpacity
+        style={[styles.folderPill, folderName === 'Not set' && styles.folderPillNotSet]}
+        onPress={onFolderPress}
+        activeOpacity={onFolderPress ? 0.7 : 1}
+      >
+        <Ionicons name="folder" size={16} color={folderName === 'Not set' ? colors.orange : colors.white} style={styles.folderIcon} />
         <Text style={styles.folderText} numberOfLines={1}>{folderName}</Text>
+        <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.6)" style={{ marginLeft: 4 }} />
       </TouchableOpacity>
       <View style={styles.actions}>
         <TouchableOpacity

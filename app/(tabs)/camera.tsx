@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { CameraView } from 'expo-camera';
+import * as FileSystem from 'expo-file-system/legacy';
 import { CameraTopBar } from '../../src/components/camera/CameraTopBar';
 import { CameraControls } from '../../src/components/camera/CameraControls';
 import { CameraSettingsSheet } from '../../src/components/camera/CameraSettingsSheet';
@@ -20,7 +21,7 @@ export default function CameraScreen() {
   const { cameraRef, permission, requestPermission, facing, flash, toggleFacing, toggleFlash, takePicture } = useCamera();
   const [isCapturing, setIsCapturing] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const { refresh } = useUploads();
+  const { refresh, uploadPending } = useUploads();
   const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
   const { settings, updateSetting } = useSettings();
   const colors = useThemeColors();
@@ -103,22 +104,26 @@ export default function CameraScreen() {
       if (photo) {
         console.log('Photo captured:', photo.uri);
         const annotations = await getAnnotationText();
+        const fileInfo = await FileSystem.getInfoAsync(photo.uri);
+        const fileSize = (fileInfo.exists && 'size' in fileInfo) ? ((fileInfo as any).size ?? 0) : 0;
         await uploadQueue.enqueue({
           localUri: photo.uri,
           fileName: `fieldcam_${Date.now()}.jpg`,
           mimeType: 'image/jpeg',
-          fileSize: 0,
+          fileSize,
           provider: (currentFolder?.provider ?? 'google') as import('../../src/types/auth').CloudProvider,
           folderId: currentFolder?.id ?? 'root',
           folderName: currentFolder?.name ?? 'Not set',
           annotations: annotations || undefined,
         });
         await refresh();
+        // Trigger upload processing
+        uploadPending();
       }
     } finally {
       setIsCapturing(false);
     }
-  }, [takePicture, refresh, currentFolder]);
+  }, [takePicture, refresh, uploadPending, currentFolder]);
 
   const handleLocationToggle = useCallback(() => {
     setLocationEnabled(prev => !prev);

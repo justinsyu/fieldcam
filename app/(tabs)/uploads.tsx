@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
+import { FlatList, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SectionHeader } from '../../src/components/ui/SectionHeader';
@@ -13,7 +13,7 @@ import { uploadQueue } from '../../src/services/uploadQueue';
 import type { UploadItem } from '../../src/types/upload';
 
 export default function UploadsScreen() {
-  const { items, refresh } = useUploads();
+  const { items, refresh, uploadPending, isUploading } = useUploads();
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const colors = useThemeColors();
@@ -35,6 +35,10 @@ export default function UploadsScreen() {
       marginHorizontal: spacing.md,
       marginVertical: spacing.md,
     },
+    retryAllContainer: {
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.sm,
+    },
   }), [colors]);
 
   const handleRefresh = useCallback(async () => {
@@ -46,10 +50,16 @@ export default function UploadsScreen() {
     }
   }, [refresh]);
 
+  const pendingItems = useMemo(() =>
+    items.filter(i => i.status === 'pending' || i.status === 'failed'),
+    [items]
+  );
+
   const handleRetry = useCallback(async (id: string) => {
-    await uploadQueue.updateStatus(id, 'pending');
+    await uploadQueue.resetForRetry(id);
     await refresh();
-  }, [refresh]);
+    await uploadPending();
+  }, [uploadPending, refresh]);
 
   const renderItem = useCallback(({ item }: { item: UploadItem }) => (
     <UploadListItem item={item} onRetry={handleRetry} />
@@ -61,6 +71,21 @@ export default function UploadsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.screenTitle}>Uploads</Text>
       <SectionHeader title="Upload Queue" />
+      {isUploading && (
+        <View style={[styles.retryAllContainer, { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }]}>
+          <ActivityIndicator size="small" color={colors.orange} />
+          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Uploading...</Text>
+        </View>
+      )}
+      {!isUploading && pendingItems.length > 0 && (
+        <View style={styles.retryAllContainer}>
+          <Button
+            label={`Retry All (${pendingItems.length})`}
+            onPress={uploadPending}
+            variant="primary"
+          />
+        </View>
+      )}
       <FlatList
         data={items}
         keyExtractor={keyExtractor}

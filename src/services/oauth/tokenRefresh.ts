@@ -11,13 +11,17 @@ export async function getValidAccessToken(provider: CloudProvider): Promise<stri
   const account = await secureStorage.getCloudAccount(provider);
   if (!account) throw new Error(`Provider "${provider}" is not linked`);
 
+  // Google tokens are always refreshed via GoogleSignin.getTokens() which
+  // handles expiry internally. For other providers, check the stored expiry.
+  if (provider === 'google') {
+    return refreshGoogleToken(account);
+  }
+
   if (account.expiresAt > Date.now() + TOKEN_BUFFER_MS) {
     return account.accessToken;
   }
 
-  if (provider === 'google') {
-    return refreshGoogleToken(account);
-  } else if (provider === 'microsoft') {
+  if (provider === 'microsoft') {
     return refreshMicrosoftToken(account);
   } else if (provider === 'dropbox') {
     return refreshDropboxToken(account);
@@ -29,7 +33,14 @@ export async function getValidAccessToken(provider: CloudProvider): Promise<stri
 async function refreshGoogleToken(account: LinkedCloudAccount): Promise<string> {
   const { GoogleSignin } = require('@react-native-google-signin/google-signin');
   try {
+    // signInSilently refreshes the session if needed
     await GoogleSignin.signInSilently();
+  } catch {
+    // Session expired entirely — need full re-sign-in
+    throw new Error('Google session expired. Please disconnect and reconnect Google Drive in Settings.');
+  }
+  try {
+    // getTokens() always returns a fresh, valid access token
     const tokens = await GoogleSignin.getTokens();
     const updated: LinkedCloudAccount = {
       ...account,
@@ -39,7 +50,7 @@ async function refreshGoogleToken(account: LinkedCloudAccount): Promise<string> 
     await secureStorage.saveCloudAccount(updated);
     return tokens.accessToken;
   } catch {
-    throw new Error('Google token refresh failed. Please re-link Google Drive.');
+    throw new Error('Failed to get Google tokens. Please re-link Google Drive.');
   }
 }
 

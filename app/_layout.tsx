@@ -11,7 +11,7 @@ import '../src/db/init';
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { UploadProvider } from '../src/context/UploadContext';
-import { ThemeProvider, useThemeColors } from '../src/context/ThemeContext';
+import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -60,7 +60,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { isLoading, isAuthenticated } = useAuth();
-  const colors = useThemeColors();
+  const { colors, theme } = useTheme();
 
   const styles = useMemo(() => StyleSheet.create({
     loading: {
@@ -97,7 +97,7 @@ function RootLayoutNav() {
           options={{
             title: 'Choose Folder',
             headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.white,
+            headerTintColor: colors.textPrimary,
           }}
         />
         <Stack.Screen
@@ -105,7 +105,7 @@ function RootLayoutNav() {
           options={{
             title: 'Scan QR Code',
             headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.white,
+            headerTintColor: colors.textPrimary,
           }}
         />
         <Stack.Screen
@@ -113,7 +113,7 @@ function RootLayoutNav() {
           options={{
             title: 'Upload History',
             headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.white,
+            headerTintColor: colors.textPrimary,
           }}
         />
         <Stack.Screen
@@ -121,7 +121,7 @@ function RootLayoutNav() {
           options={{
             title: 'App Permissions',
             headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.white,
+            headerTintColor: colors.textPrimary,
           }}
         />
         <Stack.Screen
@@ -133,7 +133,7 @@ function RootLayoutNav() {
         />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/login" />}
-      <StatusBar style="light" />
+      <StatusBar style={theme.isLight ? 'dark' : 'light'} />
     </NavThemeProvider>
   );
 }

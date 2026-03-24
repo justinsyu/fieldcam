@@ -4,10 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SectionHeader, Toggle, Card } from '../../src/components/ui';
+import { useFocusEffect } from 'expo-router';
 import { useSettings } from '../../src/hooks/useSettings';
 import { useAuth } from '../../src/context/AuthContext';
 import { uploadQueue } from '../../src/services/uploadQueue';
 import { secureStorage } from '../../src/services/secureStorage';
+import { folderService, type FolderInfo } from '../../src/services/folderService';
 import type { CloudProvider, LinkedCloudAccount } from '../../src/types/auth';
 import { useThemeColors } from '../../src/context/ThemeContext';
 import { ThemePicker } from '../../src/components/settings/ThemePicker';
@@ -19,6 +21,13 @@ export default function SettingsScreen() {
   const { user, signOut, deleteAccount, linkedAccounts, refreshLinkedAccounts } = useAuth();
   const router = useRouter();
   const colors = useThemeColors();
+  const [currentFolder, setCurrentFolder] = React.useState<FolderInfo | null>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      folderService.getCurrentFolder().then(setCurrentFolder);
+    }, [])
+  );
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -82,6 +91,26 @@ export default function SettingsScreen() {
       color: colors.textPrimary,
     },
     cloudEmail: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    folderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    folderRowInfo: {
+      flex: 1,
+      marginLeft: spacing.sm,
+    },
+    folderRowLabel: {
+      ...typography.body,
+      color: colors.textPrimary,
+    },
+    folderRowValue: {
       ...typography.caption,
       color: colors.textSecondary,
     },
@@ -158,7 +187,7 @@ export default function SettingsScreen() {
       const googleUser = await GoogleSignin.getCurrentUser();
       const account: LinkedCloudAccount = {
         provider: 'google',
-        email: googleUser?.data?.user.email ?? '',
+        email: googleUser?.user.email ?? '',
         accessToken: tokens.accessToken,
         refreshToken: null,
         expiresAt: Date.now() + 3600 * 1000,
@@ -239,6 +268,19 @@ export default function SettingsScreen() {
               </View>
             );
           })}
+          <TouchableOpacity
+            onPress={() => router.push('/folder-picker')}
+            style={styles.folderRow}
+          >
+            <Ionicons name="folder" size={20} color={colors.orange} />
+            <View style={styles.folderRowInfo}>
+              <Text style={styles.folderRowLabel}>Upload Folder</Text>
+              <Text style={styles.folderRowValue}>
+                {currentFolder ? currentFolder.name : 'Not set — tap to choose'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
         </Card>
 
         <SectionHeader title="Upload" />

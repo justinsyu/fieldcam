@@ -44,7 +44,9 @@ function rowToProfile(row: DbRow): ProcessingProfile {
     name: row.name,
     description: row.description,
     promptTemplate: row.prompt_template,
-    deliveryType: (row.delivery_type || 'same_folder').split(',') as DeliveryType[],
+    deliveryType: row.delivery_type === 'both'
+      ? ['same_folder', 'email'] as DeliveryType[]
+      : (row.delivery_type || 'same_folder').split(',') as DeliveryType[],
     deliveryDestination: row.delivery_destination,
     isActive: row.is_active === 1,
     isTeam: row.is_team === 1,

@@ -95,12 +95,22 @@ const googleDriveProvider: CloudStorageProvider = {
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
     });
 
+    if (uploadResult.status < 200 || uploadResult.status >= 300) {
+      throw new Error(
+        `Upload PUT failed with status ${uploadResult.status}: ${uploadResult.body}`
+      );
+    }
+
     const parsed = JSON.parse(uploadResult.body) as {
       id: string;
       name: string;
       mimeType: string;
       webViewLink?: string;
     };
+
+    if (!parsed.id) {
+      throw new Error(`Upload response missing file id: ${uploadResult.body}`);
+    }
 
     return {
       id: parsed.id,

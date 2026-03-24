@@ -14,7 +14,6 @@ interface PermissionState {
   camera: boolean | null;
   fineLocation: boolean | null;
   coarseLocation: boolean | null;
-  notifications: boolean | null;
 }
 
 export default function PermissionsScreen() {
@@ -23,7 +22,6 @@ export default function PermissionsScreen() {
     camera: null,
     fineLocation: null,
     coarseLocation: null,
-    notifications: null,
   });
   const colors = useThemeColors();
 
@@ -71,7 +69,6 @@ export default function PermissionsScreen() {
       camera: cameraPermission?.granted ?? false,
       fineLocation: fgLocation.granted,
       coarseLocation: fgLocation.granted,
-      notifications: false,
     });
   }, [cameraPermission]);
 
@@ -87,7 +84,6 @@ export default function PermissionsScreen() {
     { label: 'Camera', granted: permState.camera },
     { label: 'Fine Location', granted: permState.fineLocation },
     { label: 'Coarse Location', granted: permState.coarseLocation },
-    { label: 'Notifications', granted: permState.notifications },
   ];
 
   return (
